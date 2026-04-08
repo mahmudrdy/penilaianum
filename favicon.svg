@@ -1,0 +1,18 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Circular Background -->
+  <circle cx="256" cy="256" r="256" fill="url(#paint0_linear)"/>
+  
+  <!-- Content: Graduation Cap Icon -->
+  <path d="M256 120L80 200L256 280L432 200L256 120Z" fill="white"/>
+  <path d="M120 230V320C120 320 180 360 256 360C332 360 392 320 392 320V230L256 300L120 230Z" fill="white" fill-opacity="0.9"/>
+  <path d="M410 210V300" stroke="white" stroke-width="20" stroke-linecap="round"/>
+  <circle cx="410" cy="310" r="15" fill="white"/>
+
+  <!-- Colors: Emerald and Indigo Gradient -->
+  <defs>
+    <linearGradient id="paint0_linear" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4f46e5"/> <!-- Indigo -->
+      <stop offset="1" stop-color="#10b981"/> <!-- Emerald -->
+    </linearGradient>
+  </defs>
+</svg>
