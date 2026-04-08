@@ -1,11 +1,26 @@
 // admin.js
 document.addEventListener('DOMContentLoaded', () => {
     
+    // Auth guard: harus login sebagai admin
+    if (!localStorage.getItem('adminData')) {
+        window.location.href = 'index.html';
+        return;
+    }
+
     if (!window.db) {
         window.utils.showError('Error', 'Firestore belum terhubung.');
         return;
     }
-    const { collection, getDocs, addDoc, doc, setDoc, deleteDoc, query, orderBy } = window.firestore;
+    const { collection, getDocs, addDoc, doc, getDoc, setDoc, deleteDoc, query, orderBy } = window.firestore;
+
+    // --- LOGOUT LOGIC ---
+    const adminLogoutBtn = document.getElementById('adminLogoutBtn');
+    if (adminLogoutBtn) {
+        adminLogoutBtn.addEventListener('click', () => {
+            localStorage.removeItem('adminData');
+            window.location.href = 'index.html';
+        });
+    }
 
     // --- NAVIGATION LOGIC ---
     const sidebar = document.getElementById('sidebar');
@@ -25,21 +40,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const navGuru = document.getElementById('nav-guru');
     const navSiswa = document.getElementById('nav-siswa');
     const navRekap = document.getElementById('nav-rekap');
+    const navPengaturan = document.getElementById('nav-pengaturan');
     const sectionGuru = document.getElementById('section-guru');
     const sectionSiswa = document.getElementById('section-siswa');
     const sectionRekap = document.getElementById('section-rekap');
+    const sectionPengaturan = document.getElementById('section-pengaturan');
     const pageTitle = document.getElementById('pageTitle');
 
     const resetNavLinks = () => {
         navGuru.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 text-slate-400 rounded-xl font-medium transition hover:bg-slate-800 hover:text-white";
         navSiswa.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 text-slate-400 rounded-xl font-medium transition hover:bg-slate-800 hover:text-white";
         navRekap.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 text-slate-400 rounded-xl font-medium transition hover:bg-slate-800 hover:text-white";
+        navPengaturan.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 text-slate-400 rounded-xl font-medium transition hover:bg-slate-800 hover:text-white";
     };
 
     navGuru.addEventListener('click', () => {
         sectionGuru.classList.remove('hidden'); sectionGuru.classList.add('grid');
         sectionSiswa.classList.add('hidden'); sectionSiswa.classList.remove('grid');
         sectionRekap.classList.add('hidden'); sectionRekap.classList.remove('grid');
+        sectionPengaturan.classList.add('hidden'); sectionPengaturan.classList.remove('grid');
         resetNavLinks();
         navGuru.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 bg-emerald-500/10 text-emerald-400 rounded-xl font-medium transition hover:bg-slate-800";
         pageTitle.textContent = "Manajemen Guru & Mata Pelajaran";
@@ -50,21 +69,36 @@ document.addEventListener('DOMContentLoaded', () => {
         sectionSiswa.classList.remove('hidden'); sectionSiswa.classList.add('grid');
         sectionGuru.classList.add('hidden'); sectionGuru.classList.remove('grid');
         sectionRekap.classList.add('hidden'); sectionRekap.classList.remove('grid');
+        sectionPengaturan.classList.add('hidden'); sectionPengaturan.classList.remove('grid');
         resetNavLinks();
         navSiswa.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 bg-emerald-500/10 text-emerald-400 rounded-xl font-medium transition hover:bg-slate-800";
         pageTitle.textContent = "Basis Data Siswa Utama";
         if(window.innerWidth < 768) toggleSidebar();
+        loadStudents();
     });
 
     navRekap.addEventListener('click', () => {
         sectionRekap.classList.remove('hidden'); sectionRekap.classList.add('grid');
         sectionGuru.classList.add('hidden'); sectionGuru.classList.remove('grid');
         sectionSiswa.classList.add('hidden'); sectionSiswa.classList.remove('grid');
+        sectionPengaturan.classList.add('hidden'); sectionPengaturan.classList.remove('grid');
         resetNavLinks();
         navRekap.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 bg-emerald-500/10 text-emerald-400 rounded-xl font-medium transition hover:bg-slate-800";
         pageTitle.textContent = "Rekap Nilai UM";
         if(window.innerWidth < 768) toggleSidebar();
         loadRekapNilai(currentRekapClass);
+    });
+
+    navPengaturan.addEventListener('click', () => {
+        sectionPengaturan.classList.remove('hidden'); sectionPengaturan.classList.add('grid');
+        sectionGuru.classList.add('hidden'); sectionGuru.classList.remove('grid');
+        sectionSiswa.classList.add('hidden'); sectionSiswa.classList.remove('grid');
+        sectionRekap.classList.add('hidden'); sectionRekap.classList.remove('grid');
+        resetNavLinks();
+        navPengaturan.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 bg-emerald-500/10 text-emerald-400 rounded-xl font-medium transition hover:bg-slate-800";
+        pageTitle.textContent = "Pengaturan Sistem";
+        if(window.innerWidth < 768) toggleSidebar();
+        loadAdminTokens();
     });
 
     // --- SECTION 1: GURU & MAPEL ---
@@ -511,6 +545,109 @@ document.addEventListener('DOMContentLoaded', () => {
             cachedMapels = null;
             loadRekapNilai(kelas);
         });
+    });
+
+    // --- SECTION 4: PENGATURAN (ADMIN TOKEN) ---
+    const adminTokenTableBody = document.getElementById('adminTokenTableBody');
+    const btnGenerateAdminToken = document.getElementById('btnGenerateAdminToken');
+
+    const loadAdminTokens = async () => {
+        adminTokenTableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-10 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Memuat token...</td></tr>`;
+        try {
+            const snap = await getDocs(collection(window.db, "admin_token"));
+            let html = '';
+            let count = 0;
+            snap.forEach(d => {
+                count++;
+                html += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="px-6 py-4 text-slate-400 font-medium">${count}</td>
+                        <td class="px-6 py-4 font-mono font-bold text-indigo-600 truncate max-w-[200px]">${d.id}</td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">Aktif</span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <button class="btn-delete-admin-token text-rose-500 hover:text-rose-700 transition p-2" data-id="${d.id}" title="Hapus Token">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            if (count === 0) {
+                adminTokenTableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-10 text-center text-slate-400">Belum ada token admin.</td></tr>`;
+            } else {
+                adminTokenTableBody.innerHTML = html;
+                attachAdminTokenDeleteListeners();
+            }
+        } catch(e) {
+            adminTokenTableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-10 text-center text-rose-500">Gagal memuat data.</td></tr>`;
+        }
+    };
+
+    const attachAdminTokenDeleteListeners = () => {
+        document.querySelectorAll('.btn-delete-admin-token').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const id = e.currentTarget.dataset.id;
+                const result = await Swal.fire({
+                    title: 'Hapus Token Admin?',
+                    text: "Token ini tidak akan bisa digunakan lagi untuk login!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#f43f5e',
+                    cancelButtonColor: '#64748b',
+                    confirmButtonText: 'Ya, Hapus!',
+                    cancelButtonText: 'Batal'
+                });
+
+                if (result.isConfirmed) {
+                    try {
+                        await deleteDoc(doc(window.db, "admin_token", id));
+                        window.utils.showSuccess("Dihapus", "Token admin telah dihapus.");
+                        loadAdminTokens();
+                    } catch(err) {
+                        window.utils.showError("Gagal", err.message);
+                    }
+                }
+            });
+        });
+    };
+
+    btnGenerateAdminToken.addEventListener('click', async () => {
+        // Generate random token like ADMIN-XXXXXX
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let rand = '';
+        for (let i = 0; i < 6; i++) rand += chars.charAt(Math.floor(Math.random() * chars.length));
+        const newToken = `ADMIN-${rand}`;
+
+        const result = await Swal.fire({
+            title: 'Generate Token Admin Baru?',
+            text: `Token baru: ${newToken}`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#4f46e5',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Ya, Simpan!',
+            cancelButtonText: 'Batal'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                window.utils.showLoading("Menyimpan...");
+                await setDoc(doc(window.db, "admin_token", newToken), { created_at: new Date() });
+                window.utils.hideLoading();
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    html: `Token admin baru telah dibuat:<br><b class="text-xl text-indigo-600 font-mono">${newToken}</b><br><br>Gunakan token ini untuk login sebagai admin.`,
+                    confirmButtonColor: '#4f46e5'
+                });
+                loadAdminTokens();
+            } catch(err) {
+                window.utils.hideLoading();
+                window.utils.showError("Gagal", err.message);
+            }
+        }
     });
 
     // INIT

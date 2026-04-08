@@ -39,11 +39,15 @@
                 <i class="fa-solid fa-chart-column w-5 text-center"></i>
                 <span class="text-sm">Nilai UM</span>
             </button>
+            <button id="nav-pengaturan" class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-slate-400 rounded-xl font-medium transition hover:bg-slate-800 hover:text-white">
+                <i class="fa-solid fa-gear w-5 text-center"></i>
+                <span class="text-sm">Pengaturan</span>
+            </button>
         </nav>
         <div class="p-4 border-t border-slate-800">
-            <a href="index.html" class="flex items-center gap-2 text-sm text-slate-400 hover:text-emerald-400 transition w-full px-4 py-2">
-                <i class="fa-solid fa-arrow-right-to-bracket"></i> Halaman Guru
-            </a>
+            <button id="adminLogoutBtn" class="flex items-center gap-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition w-full px-4 py-2 rounded-lg">
+                <i class="fa-solid fa-right-from-bracket"></i> Keluar
+            </button>
         </div>
     </aside>
 
@@ -234,6 +238,47 @@
                                         Memuat data siswa...
                                     </td>
                                 </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 4: PENGATURAN -->
+            <div id="section-pengaturan" class="hidden grid-cols-1 gap-6 animate-fade-in">
+                <div class="bg-gradient-to-r from-slate-700 to-slate-900 rounded-2xl p-6 md:p-8 text-white shadow-xl relative overflow-hidden">
+                    <div class="relative z-10">
+                        <h2 class="text-2xl md:text-3xl font-extrabold mb-2 tracking-tight">Pengaturan Sistem</h2>
+                        <p class="text-slate-300 text-sm md:text-base opacity-90 max-w-2xl">Kelola akses administratif. Anda dapat membuat token admin baru untuk rekan tim Anda.</p>
+                    </div>
+                    <div class="absolute -right-6 -bottom-6 opacity-10 pointer-events-none">
+                        <i class="fa-solid fa-gear text-[140px]"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-800">Token Akses Admin</h3>
+                            <p class="text-sm text-slate-500">Daftar token yang memiliki akses penuh ke dashboard ini</p>
+                        </div>
+                        <button id="btnGenerateAdminToken" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 shadow-lg shadow-indigo-200">
+                            <i class="fa-solid fa-plus"></i> Generate Token Baru
+                        </button>
+                    </div>
+
+                    <div class="overflow-hidden rounded-xl border border-slate-100">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-50 text-slate-600 font-bold uppercase text-[10px] tracking-wider">
+                                <tr>
+                                    <th class="px-6 py-4">No</th>
+                                    <th class="px-6 py-4">Token Admin</th>
+                                    <th class="px-6 py-4 text-center">Status</th>
+                                    <th class="px-6 py-4 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminTokenTableBody" class="divide-y divide-slate-100">
+                                <!-- Data filled by JS -->
                             </tbody>
                         </table>
                     </div>
