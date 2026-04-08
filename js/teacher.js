@@ -20,28 +20,60 @@ document.addEventListener('DOMContentLoaded', () => {
     hpName.textContent = teacherData.name;
     hpSubj.textContent = `Mapel: ${teacherData.subject}`;
 
+    const filterContainer = document.getElementById('filterContainer');
     const collectionName = `grades_${teacherData.token}`;
     
     let allStudents = [];
     let savedGrades = {};
     let currentFilter = 'SEMUA';
 
-    // Filter Listeners
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            // Update styling active
-            document.querySelectorAll('.filter-btn').forEach(b => {
-                b.className = "filter-btn flex-1 md:flex-none text-center text-slate-500 hover:text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition";
-            });
-            e.currentTarget.className = "filter-btn active flex-1 md:flex-none text-center bg-white shadow-sm text-emerald-600 px-4 py-2 rounded-lg text-sm font-bold transition";
+    const loadClassFilters = async () => {
+        try {
+            const classSnap = await getDocs(collection(window.db, "classes"));
+            let classesList = [];
+            classSnap.forEach(docSnap => classesList.push(docSnap.data().name));
+            classesList.sort();
+
+            filterContainer.innerHTML = '';
             
-            currentFilter = e.currentTarget.dataset.filter;
-            renderTable();
+            // "Semua" button
+            const btnAll = document.createElement('button');
+            btnAll.className = `filter-btn ${currentFilter === 'SEMUA' ? 'active bg-white shadow-sm text-emerald-600 font-bold' : 'text-slate-500 hover:text-slate-700 font-medium'} flex-1 md:flex-none text-center px-4 py-2 rounded-lg text-sm transition`;
+            btnAll.textContent = 'Semua';
+            btnAll.dataset.filter = 'SEMUA';
+            btnAll.addEventListener('click', handleFilterClick);
+            filterContainer.appendChild(btnAll);
+
+            // Dynamic class buttons
+            classesList.forEach(className => {
+                const btn = document.createElement('button');
+                btn.className = `filter-btn ${currentFilter === className ? 'active bg-white shadow-sm text-emerald-600 font-bold' : 'text-slate-500 hover:text-slate-700 font-medium'} flex-1 md:flex-none text-center px-4 py-2 rounded-lg text-sm transition`;
+                btn.textContent = className;
+                btn.dataset.filter = className;
+                btn.addEventListener('click', handleFilterClick);
+                filterContainer.appendChild(btn);
+            });
+        } catch (e) {
+            console.error("Gagal memuat filter kelas:", e);
+        }
+    };
+
+    const handleFilterClick = (e) => {
+        const btn = e.currentTarget;
+        document.querySelectorAll('.filter-btn').forEach(b => {
+            b.className = "filter-btn flex-1 md:flex-none text-center text-slate-500 hover:text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition";
         });
-    });
+        btn.className = "filter-btn active flex-1 md:flex-none text-center bg-white shadow-sm text-emerald-600 px-4 py-2 rounded-lg text-sm font-bold transition";
+        
+        currentFilter = btn.dataset.filter;
+        renderTable();
+    };
 
     const loadData = async () => {
         try {
+            // 0. Ambil Filter Kelas Dinamis
+            await loadClassFilters();
+
             // 1. Ambil Semua Siswa (dari Admin)
             let qSiswa;
             let snapshotSiswa;
