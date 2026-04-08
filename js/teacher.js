@@ -203,19 +203,37 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.addEventListener('click', async (e) => {
                 const id = e.currentTarget.dataset.id;
                 const name = e.currentTarget.dataset.name;
-                const p = parseFloat(document.getElementById(`praktek_${id}`).value);
-                const t = parseFloat(document.getElementById(`tulis_${id}`).value);
+                const pVal = document.getElementById(`praktek_${id}`).value;
+                const tVal = document.getElementById(`tulis_${id}`).value;
 
-                if (isNaN(p) || isNaN(t) || p < 0 || p > 100 || t < 0 || t > 100) {
-                    window.utils.showError('Invalid', 'Nilai harus lengkap (0 - 100).');
+                if (pVal === "" || tVal === "" || isNaN(pVal) || isNaN(tVal)) {
+                    window.utils.showError('Nilai Kosong', 'Kedua kolom nilai harus diisi (0-100).');
                     return;
                 }
 
-                const avg = (p + t) / 2;
+                const p = Number(pVal);
+                const t = Number(tVal);
+
+                if (p < 0 || p > 100 || t < 0 || t > 100) {
+                    window.utils.showError('Invalid', 'Nilai harus berada di rentang 0 - 100.');
+                    return;
+                }
+
+                const avg = Number(((p + t) / 2).toFixed(2));
+                
+                // --- HARDENING: Lock UI ---
                 btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
                 btn.disabled = true;
 
                 try {
+                    // --- HARDENING: Validate Session & Token ---
+                    const tRef = doc(window.db, "teachers", teacherData.token);
+                    const tSnap = await window.firestore.getDoc(tRef);
+                    if (!tSnap.exists()) {
+                        throw new Error("Sesi tidak valid atau guru telah dihapus dari sistem.");
+                    }
+
+                    // --- EXECUTION: Save to Firestore ---
                     await setDoc(doc(window.db, collectionName, id), {
                         studentId: id,
                         studentName: name,
@@ -225,12 +243,21 @@ document.addEventListener('DOMContentLoaded', () => {
                         updatedAt: new Date().toISOString()
                     });
 
+                    // --- SUCCESS: Update Local State ---
                     savedGrades[id] = { praktek: p, tulis: t, average: avg };
-                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Tersimpan!', showConfirmButton: false, timer: 1000 });
-                    renderTable(); // Update baris agar sesuai dengan status filter saat ini
+                    Swal.fire({ 
+                        toast: true, 
+                        position: 'top-end', 
+                        icon: 'success', 
+                        title: 'Nilai ' + name + ' Berhasil Tersimpan!', 
+                        showConfirmButton: false, 
+                        timer: 1500 
+                    });
+                    renderTable();
                 } catch(err) {
-                    window.utils.showError('Error', err.message);
-                    btn.innerHTML = 'Simpan';
+                    console.error("Save Error:", err);
+                    window.utils.showError('Gagal Menyimpan', `Pesan: ${err.message}. Pastikan koneksi internet stabil.`);
+                    btn.innerHTML = 'Gagal - Ulangi';
                     btn.disabled = false;
                 }
             });
@@ -261,46 +288,54 @@ document.addEventListener('DOMContentLoaded', () => {
             const batch = writeBatch(window.db);
             let hasChanges = false;
             let invalidCount = 0;
+            let currentValidChanges = [];
 
             filteredStudents.forEach(student => {
                 const pInput = document.getElementById(`praktek_${student.id}`);
                 const tInput = document.getElementById(`tulis_${student.id}`);
                 
                 if (pInput && tInput) {
-                    const p = parseFloat(pInput.value);
-                    const t = parseFloat(tInput.value);
+                    const pVal = pInput.value;
+                    const tVal = tInput.value;
 
-                    // Hanya simpan jika nilai valid
-                    if (!isNaN(p) && !isNaN(t) && p >= 0 && p <= 100 && t >= 0 && t <= 100) {
-                        const avg = (p + t) / 2;
-                        const docRef = doc(window.db, collectionName, student.id);
-                        
-                        batch.set(docRef, {
-                            studentId: student.id,
-                            studentName: student.name,
-                            praktek: p,
-                            tulis: t,
-                            average: avg,
-                            updatedAt: new Date().toISOString()
-                        });
+                    // Hanya simpan jika nilai valid dan lengkap
+                    if (pVal !== "" && tVal !== "" && !isNaN(pVal) && !isNaN(tVal)) {
+                        const p = Number(pVal);
+                        const t = Number(tVal);
 
-                        savedGrades[student.id] = { praktek: p, tulis: t, average: avg };
-                        hasChanges = true;
-                    } else if (pInput.value !== "" || tInput.value !== "") {
+                        if (p >= 0 && p <= 100 && t >= 0 && t <= 100) {
+                            const avg = Number(((p + t) / 2).toFixed(2));
+                            const docRef = doc(window.db, collectionName, student.id);
+                            
+                            batch.set(docRef, {
+                                studentId: student.id,
+                                studentName: student.name,
+                                praktek: p,
+                                tulis: t,
+                                average: avg,
+                                updatedAt: new Date().toISOString()
+                            });
+
+                            currentValidChanges.push({ id: student.id, p, t, avg });
+                            hasChanges = true;
+                        } else {
+                            invalidCount++;
+                        }
+                    } else if (pVal !== "" || tVal !== "") {
                         invalidCount++;
                     }
                 }
             });
 
             if (!hasChanges) {
-                window.utils.showError('Gagal', 'Tidak ada nilai valid yang bisa disimpan. Pastikan Praktek dan Tulis sudah diisi (0-100).');
+                window.utils.showError('Gagal', 'Tidak ada nilai valid yang bisa disimpan. Pastikan Praktek dan Tulis sudah diisi lengkap (0-100).');
                 return;
             }
 
             if (invalidCount > 0) {
                 const confirmIncomplete = await Swal.fire({
                     title: 'Nilai Belum Lengkap',
-                    text: `Ada ${invalidCount} siswa yang nilainya belum lengkap atau tidak valid dan tidak akan ikut tersimpan. Lanjutkan simpan yang valid saja?`,
+                    text: `Ada ${invalidCount} siswa yang nilainya belum lengkap atau tidak valid (di luar 0-100) dan tidak akan ikut tersimpan. Lanjutkan simpan yang valid saja?`,
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#10b981',
@@ -310,14 +345,30 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             try {
-                window.utils.showLoading("Menyimpan semua data...");
+                window.utils.showLoading("Menyimpan semua data ke Cloud...");
+                
+                // --- HARDENING: Validate Session & Token ---
+                const tRef = doc(window.db, "teachers", teacherData.token);
+                const tSnap = await window.firestore.getDoc(tRef);
+                if (!tSnap.exists()) {
+                    throw new Error("Sesi tidak valid. Akun guru ini mungkin telah dihapus.");
+                }
+
+                // --- EXECUTION: Batch Commit ---
                 await batch.commit();
+
+                // --- SUCCESS: Update Local State ---
+                currentValidChanges.forEach(item => {
+                    savedGrades[item.id] = { praktek: item.p, tulis: item.t, average: item.avg };
+                });
+
                 window.utils.hideLoading();
-                await window.utils.showSuccess("Berhasil", "Semua nilai yang valid telah berhasil disimpan.");
+                await window.utils.showSuccess("Berhasil Disimpan", `${currentValidChanges.length} data nilai telah berhasil masuk ke database pusat.`);
                 renderTable();
             } catch (err) {
                 window.utils.hideLoading();
-                window.utils.showError('Error', err.message);
+                console.error("Batch Save Error:", err);
+                window.utils.showError('Gagal Simpan Massal', `Pesan: ${err.message}. Silakan coba lagi nanti.`);
             }
         }
     });
