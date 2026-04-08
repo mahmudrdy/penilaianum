@@ -1,6 +1,6 @@
 // firebase-config.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-import { getFirestore, collection, doc, setDoc, getDoc, getDocs, addDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+import { getFirestore, collection, doc, setDoc, getDoc, getDocs, addDoc, deleteDoc, query, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDIvwhTSyUiOKUQTE85551_d9aClnTJrm0",
@@ -25,5 +25,5 @@ try {
 // Ekspor ke global window
 window.db = db;
 window.firestore = {
-    collection, doc, setDoc, getDoc, getDocs, addDoc, deleteDoc, query, orderBy
+    collection, doc, setDoc, getDoc, getDocs, addDoc, deleteDoc, query, orderBy, writeBatch
 };

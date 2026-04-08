@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const studentsTableBody = document.getElementById('studentsTableBody');
     const statsCount = document.getElementById('statsCount');
     const logoutBtn = document.getElementById('logoutBtn');
+    const btnSaveAll = document.getElementById('btnSaveAll');
 
     hpName.textContent = teacherData.name;
     hpSubj.textContent = `Mapel: ${teacherData.subject}`;
@@ -203,6 +204,91 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     };
+
+    btnSaveAll.addEventListener('click', async () => {
+        let filteredStudents = allStudents;
+        if (currentFilter !== 'SEMUA') {
+            filteredStudents = allStudents.filter(s => (s.kelas || "Lainnya") === currentFilter);
+        }
+
+        if (filteredStudents.length === 0) return;
+
+        const result = await Swal.fire({
+            title: 'Simpan Semua Nilai?',
+            text: `Semua nilai yang Anda masukkan untuk kelas ${currentFilter} akan disimpan secara massal.`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#10b981',
+            cancelButtonColor: '#94a3b8',
+            confirmButtonText: 'Ya, Simpan Semua',
+            cancelButtonText: 'Batal'
+        });
+
+        if (result.isConfirmed) {
+            const { writeBatch } = window.firestore;
+            const batch = writeBatch(window.db);
+            let hasChanges = false;
+            let invalidCount = 0;
+
+            filteredStudents.forEach(student => {
+                const pInput = document.getElementById(`praktek_${student.id}`);
+                const tInput = document.getElementById(`tulis_${student.id}`);
+                
+                if (pInput && tInput) {
+                    const p = parseFloat(pInput.value);
+                    const t = parseFloat(tInput.value);
+
+                    // Hanya simpan jika nilai valid
+                    if (!isNaN(p) && !isNaN(t) && p >= 0 && p <= 100 && t >= 0 && t <= 100) {
+                        const avg = (p + t) / 2;
+                        const docRef = doc(window.db, collectionName, student.id);
+                        
+                        batch.set(docRef, {
+                            studentId: student.id,
+                            studentName: student.name,
+                            praktek: p,
+                            tulis: t,
+                            average: avg,
+                            updatedAt: new Date().toISOString()
+                        });
+
+                        savedGrades[student.id] = { praktek: p, tulis: t, average: avg };
+                        hasChanges = true;
+                    } else if (pInput.value !== "" || tInput.value !== "") {
+                        invalidCount++;
+                    }
+                }
+            });
+
+            if (!hasChanges) {
+                window.utils.showError('Gagal', 'Tidak ada nilai valid yang bisa disimpan. Pastikan Praktek dan Tulis sudah diisi (0-100).');
+                return;
+            }
+
+            if (invalidCount > 0) {
+                const confirmIncomplete = await Swal.fire({
+                    title: 'Nilai Belum Lengkap',
+                    text: `Ada ${invalidCount} siswa yang nilainya belum lengkap atau tidak valid dan tidak akan ikut tersimpan. Lanjutkan simpan yang valid saja?`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#10b981',
+                    confirmButtonText: 'Ya, Lanjutkan'
+                });
+                if (!confirmIncomplete.isConfirmed) return;
+            }
+
+            try {
+                window.utils.showLoading("Menyimpan semua data...");
+                await batch.commit();
+                window.utils.hideLoading();
+                await window.utils.showSuccess("Berhasil", "Semua nilai yang valid telah berhasil disimpan.");
+                renderTable();
+            } catch (err) {
+                window.utils.hideLoading();
+                window.utils.showError('Error', err.message);
+            }
+        }
+    });
 
     logoutBtn.addEventListener('click', () => {
         Swal.fire({
