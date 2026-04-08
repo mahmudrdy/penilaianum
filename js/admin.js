@@ -590,10 +590,30 @@ document.addEventListener('DOMContentLoaded', () => {
                     confirmButtonColor: '#4f46e5',
                 });
                 if (newName && newName !== oldName) {
-                    window.utils.showLoading("Mengupdate...");
-                    await updateDoc(doc(window.db, "classes", id), { name: newName });
-                    window.utils.showSuccess("Berhasil", "Nama kelas diperbarui.");
-                    loadClasses();
+                    window.utils.showLoading("Mengupdate Serta Sinkronisasi...");
+                    try {
+                        // 1. Update Class Name
+                        await updateDoc(doc(window.db, "classes", id), { name: newName });
+
+                        // 2. Sync Students
+                        const sSnap = await getDocs(query(collection(window.db, "students"), window.firestore.where("kelas", "==", oldName)));
+                        for (const sDoc of sSnap.docs) {
+                            await updateDoc(doc(window.db, "students", sDoc.id), { kelas: newName });
+                        }
+
+                        // 3. Sync Subjects (Peminatan)
+                        const subSnap = await getDocs(query(collection(window.db, "subjects"), window.firestore.where("targetClass", "==", oldName)));
+                        for (const subDoc of subSnap.docs) {
+                            await updateDoc(doc(window.db, "subjects", subDoc.id), { targetClass: newName });
+                        }
+
+                        window.utils.showSuccess("Berhasil", `Kelas diupdate ke ${newName} dan ${sSnap.size} siswa telah disinkronkan.`);
+                        loadClasses();
+                        loadStudents();
+                        loadSubjects();
+                    } catch (err) {
+                        window.utils.showError("Gagal Sinkronisasi", err.message);
+                    }
                 }
             });
         });
@@ -1113,6 +1133,39 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // --- DATA MIGRATION ---
+    const runClassMigration = async () => {
+        // Migration XII IPA -> MIPA
+        try {
+            const oldName = "XII IPA";
+            const newName = "MIPA";
+            
+            // Check if XII IPA exists in classes
+            const classSnap = await getDocs(query(collection(window.db, "classes"), window.firestore.where("name", "==", oldName)));
+            if (!classSnap.empty) {
+                console.log(`Migrating ${oldName} to ${newName}...`);
+                for (const cDoc of classSnap.docs) {
+                    await updateDoc(doc(window.db, "classes", cDoc.id), { name: newName });
+                    
+                    // Sync Students
+                    const sSnap = await getDocs(query(collection(window.db, "students"), window.firestore.where("kelas", "==", oldName)));
+                    for (const sDoc of sSnap.docs) {
+                        await updateDoc(doc(window.db, "students", sDoc.id), { kelas: newName });
+                    }
+
+                    // Sync Subjects
+                    const subSnap = await getDocs(query(collection(window.db, "subjects"), window.firestore.where("targetClass", "==", oldName)));
+                    for (const subDoc of subSnap.docs) {
+                        await updateDoc(doc(window.db, "subjects", subDoc.id), { targetClass: newName });
+                    }
+                }
+                console.log("Migration complete.");
+                loadClasses(); loadStudents(); loadSubjects();
+            }
+        } catch (e) { console.error("Migration Error:", e); }
+    };
+
     // INIT
+    runClassMigration();
     loadSubjects(); loadTeachers(); loadStudents(); loadClasses(); loadAdminTokens();
 });
