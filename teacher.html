@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guru Dashboard - Sistem Penilaian UM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        /* Chrome, Safari, Edge, Opera */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        /* Firefox */
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen text-slate-800 font-sans">
+    
+    <!-- Navbar -->
+    <nav class="bg-white shadow-[0_4px_20px_rgba(0,0,0,0.03)] sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold border border-emerald-200">
+                        <i class="fa-solid fa-chalkboard-user"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-sm font-bold text-slate-800 leading-tight" id="headerTeacherName">Memuat...</h1>
+                        <p class="text-xs text-slate-500 font-medium" id="headerTeacherSubject">Mapel: ...</p>
+                    </div>
+                </div>
+                <div>
+                    <button id="logoutBtn" class="text-sm font-medium text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-lg transition border border-transparent hover:border-red-100 flex items-center gap-2">
+                        <i class="fa-solid fa-right-from-bracket"></i> Keluar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 animate-fade-in relative z-10 w-full overflow-x-hidden">
+        
+        <div class="mb-6 md:mb-8 text-center sm:text-left bg-gradient-to-r from-emerald-600 to-teal-500 rounded-3xl p-6 md:p-8 text-white shadow-xl relative overflow-hidden flex flex-col sm:flex-row justify-between items-center gap-4 border border-emerald-400/20">
+            <div class="relative z-10 flex-1">
+                <h2 class="text-2xl md:text-3xl font-extrabold mb-2 tracking-tight">Daftar Penilaian Kelas</h2>
+                <p class="text-emerald-50 text-sm md:text-base opacity-90 max-w-lg">Silakan masukkan nilai pada masing-masing baris siswa. Data akan langsung terhitung dan tersimpan ke Sistem Pusat.</p>
+            </div>
+            <div class="absolute -right-10 -bottom-10 opacity-20 pointer-events-none transform rotate-12 transition-transform hover:rotate-6">
+                <i class="fa-solid fa-medal text-[140px] md:text-[180px]"></i>
+            </div>
+        </div>
+
+        <!-- Grade Input Table -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 border-b border-slate-100 pb-4">
+                <div class="flex items-center gap-3">
+                    <h3 class="text-lg font-semibold text-slate-800 flex items-center">
+                        <i class="fa-solid fa-users-rays text-emerald-500 mr-2"></i> Siswa
+                    </h3>
+                    <span class="bg-slate-100 text-slate-600 text-xs font-semibold px-2.5 py-1 rounded-full border border-slate-200" id="statsCount">0 Siswa Dinilai</span>
+                </div>
+                
+                <div class="flex bg-slate-100 p-1 rounded-xl shadow-inner w-full md:w-auto">
+                    <button class="filter-btn active flex-1 md:flex-none text-center bg-white shadow-sm text-emerald-600 px-4 py-2 rounded-lg text-sm font-bold transition" data-filter="SEMUA">Semua</button>
+                    <button class="filter-btn flex-1 md:flex-none text-center text-slate-500 hover:text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition" data-filter="XII IPA">XII IPA</button>
+                    <button class="filter-btn flex-1 md:flex-none text-center text-slate-500 hover:text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition" data-filter="XII IPS">XII IPS</button>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-slate-100">
+                <table class="w-full text-sm text-left text-slate-600 min-w-[700px]">
+                    <thead class="text-xs text-slate-700 uppercase bg-slate-50">
+                        <tr>
+                            <th class="px-4 py-3 w-16">No/NIS</th>
+                            <th class="px-4 py-3">Nama Siswa Lengkap</th>
+                            <th class="px-4 py-3 w-32">Nilai Praktek</th>
+                            <th class="px-4 py-3 w-32">Nilai Tulis</th>
+                            <th class="px-4 py-3 w-24">Rata-rata</th>
+                            <th class="px-4 py-3 text-right w-24">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentsTableBody">
+                        <!-- Data akan digenerate JavaScript -->
+                        <tr>
+                            <td colspan="6" class="px-4 py-10 text-center text-slate-400">
+                                <i class="fa-solid fa-spinner fa-spin text-2xl mb-2 text-emerald-500"></i><br>
+                                Memuat data siswa...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <script type="module" src="js/firebase-config.js"></script>
+    <script type="module" src="js/utils.js"></script>
+    <script type="module" src="js/teacher.js"></script>
+</body>
+</html>

@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Sistem Penilaian UM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+</head>
+<body class="bg-gray-50 text-slate-800 font-sans h-screen flex overflow-hidden">
+
+    <!-- Overlay for Sidebar Mobile -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-slate-900/50 z-20 hidden md:hidden backdrop-blur-sm transition-opacity"></div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="w-64 bg-slate-900 text-white flex flex-col transition-transform duration-300 fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 z-30 shadow-xl">
+        <div class="h-16 flex items-center px-6 border-b border-slate-800 justify-between">
+            <div class="flex items-center">
+                <i class="fa-solid fa-graduation-cap text-emerald-400 text-2xl mr-3"></i>
+                <span class="font-bold text-lg tracking-wide">Portal Admin</span>
+            </div>
+            <button id="closeSidebarBtn" class="md:hidden text-slate-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+        </div>
+        <nav class="flex-1 px-4 py-6 space-y-2">
+            <button id="nav-guru" class="nav-btn w-full flex items-center gap-3 px-4 py-3 bg-emerald-500/10 text-emerald-400 rounded-xl font-medium transition hover:bg-slate-800">
+                <i class="fa-solid fa-chalkboard-user w-5 text-center"></i>
+                <span class="text-sm">Guru & Mapel</span>
+            </button>
+            <button id="nav-siswa" class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-slate-400 rounded-xl font-medium transition hover:bg-slate-800 hover:text-white">
+                <i class="fa-solid fa-users w-5 text-center"></i>
+                <span class="text-sm">Data Siswa</span>
+            </button>
+            <button id="nav-rekap" class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-slate-400 rounded-xl font-medium transition hover:bg-slate-800 hover:text-white">
+                <i class="fa-solid fa-chart-column w-5 text-center"></i>
+                <span class="text-sm">Nilai UM</span>
+            </button>
+        </nav>
+        <div class="p-4 border-t border-slate-800">
+            <a href="index.html" class="flex items-center gap-2 text-sm text-slate-400 hover:text-emerald-400 transition w-full px-4 py-2">
+                <i class="fa-solid fa-arrow-right-to-bracket"></i> Halaman Guru
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50 relative w-full">
+        <!-- Topbar -->
+        <header class="h-16 bg-white shadow-sm flex items-center px-4 md:px-8 z-10 gap-4">
+            <button id="menuToggleBtn" class="md:hidden text-slate-500 hover:text-emerald-500 border border-slate-200 rounded-lg w-10 h-10 flex items-center justify-center bg-slate-50">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <h1 id="pageTitle" class="text-lg md:text-xl font-semibold text-slate-800 truncate">Manajemen Guru & Mata Pelajaran</h1>
+        </header>
+
+        <!-- Scrollable Area -->
+        <div class="flex-1 overflow-y-auto p-4 md:p-8 popup-container">
+            
+            <!-- SECTION 1: Guru & Mapel -->
+            <div id="section-guru" class="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
+                <!-- Left Column (Forms) -->
+                <div class="space-y-6 lg:col-span-1">
+                    <!-- Add Subject Form -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                            <i class="fa-solid fa-book-open text-emerald-500 mr-2"></i> Tambah Pelajaran
+                        </h3>
+                        <form id="subjectForm" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Nama Mata Pelajaran</label>
+                                <input type="text" id="subjectName" required class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 bg-slate-50 transition placeholder-slate-400" placeholder="Cth: Matematika">
+                            </div>
+                            <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-medium py-2.5 rounded-xl transition shadow-sm">
+                                Simpan Pelajaran
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Add Teacher Form -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                            <i class="fa-solid fa-user-tie text-emerald-500 mr-2"></i> Tambah Guru Baru
+                        </h3>
+                        <form id="teacherForm" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Nama Guru</label>
+                                <input type="text" id="teacherName" required class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 bg-slate-50 transition" placeholder="Cth: Budi Santoso, S.Pd">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Mata Pelajaran</label>
+                                <select id="teacherSubject" required class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 bg-slate-50 transition">
+                                    <option value="">-- Memuat Pelajaran... --</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="w-full bg-gradient-primary text-white font-medium py-2.5 rounded-xl transition shadow-md hover:scale-[1.02]">
+                                Tambah & Generate Token
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Right Column (Data Lists) -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 h-full">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-lg font-semibold text-slate-800"><i class="fa-solid fa-users text-emerald-500 mr-2"></i> Daftar Guru & Token</h3>
+                            <span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-full font-bold" id="teacherCount">0</span>
+                        </div>
+                        <div class="overflow-x-auto rounded-lg border border-slate-100">
+                            <table class="w-full text-sm text-left text-slate-500">
+                                <thead class="text-xs text-slate-700 uppercase bg-slate-50">
+                                    <tr>
+                                        <th class="px-4 py-3">Nama Guru</th>
+                                        <th class="px-4 py-3">Mapel</th>
+                                        <th class="px-4 py-3">TokenAkses</th>
+                                        <th class="px-4 py-3 text-right">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="teacherTableBody">
+                                    <tr><td colspan="4" class="px-4 py-8 text-center text-slate-400">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 2: Data Siswa (Hidden by default) -->
+            <div id="section-siswa" class="hidden grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
+                
+                <div class="space-y-6 lg:col-span-1">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center">
+                            <i class="fa-solid fa-user-plus text-emerald-500 mr-2"></i> Tambah Siswa
+                        </h3>
+                        <form id="studentForm" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Nomor Induk / Absen</label>
+                                <input type="text" id="studentNIS" required class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 bg-slate-50" placeholder="Opsional (tekan spasi jika kosong)">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Nama Siswa Lengkap</label>
+                                <input type="text" id="studentNameNew" required class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 bg-slate-50" placeholder="Cth: Ahmad Fulan">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Kelas</label>
+                                <select id="studentClass" required class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 bg-slate-50">
+                                    <option value="">-- Pilih Kelas --</option>
+                                    <option value="XII IPA">XII IPA</option>
+                                    <option value="XII IPS">XII IPS</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-medium py-2.5 rounded-xl transition shadow-sm">
+                                Simpan Siswa
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 h-full">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-lg font-semibold text-slate-800"><i class="fa-solid fa-users-viewfinder text-emerald-500 mr-2"></i> Basis Data Siswa Utama</h3>
+                            <span class="bg-blue-100 text-blue-800 text-xs px-2.5 py-1 rounded-full font-bold" id="studentCount">0</span>
+                        </div>
+                        <div class="overflow-x-auto rounded-lg border border-slate-100">
+                            <table class="w-full text-sm text-left text-slate-500 min-w-[700px]">
+                                <thead class="text-xs text-slate-700 uppercase bg-slate-50">
+                                    <tr>
+                                        <th class="px-4 py-3">NIS/No</th>
+                                        <th class="px-4 py-3">Nama Siswa Lengkap</th>
+                                        <th class="px-4 py-3">Kelas</th>
+                                        <th class="px-4 py-3">Ditambahkan Pada</th>
+                                        <th class="px-4 py-3 text-right">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="studentTableBody">
+                                    <tr><td colspan="5" class="px-4 py-8 text-center text-slate-400">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- SECTION 3: NILAI UM -->
+            <div id="section-rekap" class="hidden grid-cols-1 gap-6 animate-fade-in">
+                <!-- Header Card -->
+                <div class="bg-gradient-to-r from-indigo-600 to-violet-500 rounded-2xl p-6 md:p-8 text-white shadow-xl relative overflow-hidden">
+                    <div class="relative z-10">
+                        <h2 class="text-2xl md:text-3xl font-extrabold mb-2 tracking-tight">Rekap Nilai Ujian Madrasah</h2>
+                        <p class="text-indigo-100 text-sm md:text-base opacity-90 max-w-2xl">Pilih kelas untuk melihat daftar siswa beserta seluruh nilai UM dari semua mata pelajaran. Data dapat diekspor ke Excel.</p>
+                    </div>
+                    <div class="absolute -right-6 -bottom-6 opacity-15 pointer-events-none">
+                        <i class="fa-solid fa-chart-column text-[140px]"></i>
+                    </div>
+                </div>
+
+                <!-- Controls Bar -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div class="flex bg-slate-100 p-1 rounded-xl shadow-inner w-full sm:w-auto">
+                        <button class="rekap-class-btn active flex-1 sm:flex-none text-center bg-white shadow-sm text-indigo-600 px-5 py-2.5 rounded-lg text-sm font-bold transition" data-class="XII IPA">XII IPA</button>
+                        <button class="rekap-class-btn flex-1 sm:flex-none text-center text-slate-500 hover:text-slate-700 px-5 py-2.5 rounded-lg text-sm font-medium transition" data-class="XII IPS">XII IPS</button>
+                    </div>
+                    <span class="text-sm text-slate-500"><i class="fa-solid fa-users mr-1"></i> <span id="rekapStudentCount">0</span> Siswa</span>
+                </div>
+
+                <!-- Student List Table -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 md:p-6">
+                    <div class="mb-4">
+                        <h3 class="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                            <i class="fa-solid fa-users text-indigo-500"></i> Daftar Siswa — Klik tombol Excel untuk ekspor nilai UM
+                        </h3>
+                    </div>
+                    <div class="overflow-y-auto max-h-[65vh] rounded-xl border border-slate-200">
+                        <table class="w-full text-sm text-left text-slate-600" id="rekapTable">
+                            <thead class="text-xs text-slate-700 uppercase" id="rekapTableHead">
+                                <tr>
+                                    <th class="px-3 py-3 text-center w-12">No</th>
+                                    <th class="px-4 py-3">NISN</th>
+                                    <th class="px-4 py-3">Nama Lengkap</th>
+                                    <th class="px-3 py-3 text-center w-28">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rekapTableBody">
+                                <tr>
+                                    <td colspan="4" class="px-4 py-10 text-center text-slate-400">
+                                        <i class="fa-solid fa-spinner fa-spin text-2xl mb-2 text-indigo-500"></i><br>
+                                        Memuat data siswa...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script type="module" src="js/firebase-config.js"></script>
+    <script type="module" src="js/utils.js"></script>
+    <script type="module" src="js/admin.js"></script>
+</body>
+</html>
