@@ -12,6 +12,24 @@ export const showSuccess = (title, text) => {
     });
 };
 
+export const showToast = (title, icon = 'success') => {
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 2000,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+            toast.addEventListener('mouseenter', Swal.stopTimer)
+            toast.addEventListener('mouseleave', Swal.resumeTimer)
+        }
+    });
+    Toast.fire({
+        icon: icon,
+        title: title
+    });
+};
+
 export const showError = (title, text) => {
     return Swal.fire({
         icon: 'error',
@@ -54,6 +72,7 @@ export const generateToken = () => {
 
 window.utils = {
     showSuccess,
+    showToast,
     showError,
     showLoading,
     hideLoading,

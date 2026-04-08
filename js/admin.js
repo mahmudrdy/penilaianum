@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.utils.showError('Error', 'Firestore belum terhubung.');
         return;
     }
-    const { collection, getDocs, addDoc, doc, getDoc, setDoc, deleteDoc, query, orderBy } = window.firestore;
+    const { collection, getDocs, addDoc, doc, getDoc, setDoc, deleteDoc, updateDoc, query, orderBy } = window.firestore;
 
     // --- LOGOUT LOGIC ---
     const adminLogoutBtn = document.getElementById('adminLogoutBtn');
@@ -38,65 +38,91 @@ document.addEventListener('DOMContentLoaded', () => {
     sidebarOverlay.addEventListener('click', toggleSidebar);
 
     const navGuru = document.getElementById('nav-guru');
+    const navMapel = document.getElementById('nav-mapel');
     const navSiswa = document.getElementById('nav-siswa');
     const navRekap = document.getElementById('nav-rekap');
     const navPengaturan = document.getElementById('nav-pengaturan');
     const sectionGuru = document.getElementById('section-guru');
+    const sectionMapel = document.getElementById('section-mapel');
     const sectionSiswa = document.getElementById('section-siswa');
     const sectionRekap = document.getElementById('section-rekap');
     const sectionPengaturan = document.getElementById('section-pengaturan');
     const pageTitle = document.getElementById('pageTitle');
+    const btnResetData = document.getElementById('btnResetData');
+    const studentClassSelect = document.getElementById('studentClass');
+    const rekapClassFilters = document.getElementById('rekapClassFilters');
+    const btnAddClass = document.getElementById('btnAddClass');
+    const classTableBody = document.getElementById('classTableBody');
 
     const resetNavLinks = () => {
-        navGuru.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 text-slate-400 rounded-xl font-medium transition hover:bg-slate-800 hover:text-white";
-        navSiswa.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 text-slate-400 rounded-xl font-medium transition hover:bg-slate-800 hover:text-white";
-        navRekap.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 text-slate-400 rounded-xl font-medium transition hover:bg-slate-800 hover:text-white";
-        navPengaturan.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 text-slate-400 rounded-xl font-medium transition hover:bg-slate-800 hover:text-white";
+        navGuru.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 text-slate-400 rounded-lg font-medium transition hover:bg-slate-800 hover:text-white";
+        navMapel.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 text-slate-400 rounded-lg font-medium transition hover:bg-slate-800 hover:text-white";
+        navSiswa.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 text-slate-400 rounded-lg font-medium transition hover:bg-slate-800 hover:text-white";
+        navRekap.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 text-slate-400 rounded-lg font-medium transition hover:bg-slate-800 hover:text-white";
+        navPengaturan.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 text-slate-400 rounded-lg font-medium transition hover:bg-slate-800 hover:text-white";
     };
 
     navGuru.addEventListener('click', () => {
         sectionGuru.classList.remove('hidden'); sectionGuru.classList.add('grid');
+        sectionMapel.classList.add('hidden'); sectionMapel.classList.remove('grid');
         sectionSiswa.classList.add('hidden'); sectionSiswa.classList.remove('grid');
-        sectionRekap.classList.add('hidden'); sectionRekap.classList.remove('grid');
-        sectionPengaturan.classList.add('hidden'); sectionPengaturan.classList.remove('grid');
+        sectionRekap.classList.add('hidden'); 
+        sectionPengaturan.classList.add('hidden'); 
         resetNavLinks();
-        navGuru.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 bg-emerald-500/10 text-emerald-400 rounded-xl font-medium transition hover:bg-slate-800";
-        pageTitle.textContent = "Manajemen Guru & Mata Pelajaran";
+        navGuru.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 bg-slate-800 text-white rounded-lg font-medium transition";
+        pageTitle.textContent = "Manajemen Data Guru";
         if(window.innerWidth < 768) toggleSidebar();
+        loadTeachers();
+    });
+
+    navMapel.addEventListener('click', () => {
+        sectionMapel.classList.remove('hidden'); sectionMapel.classList.add('grid');
+        sectionGuru.classList.add('hidden'); sectionGuru.classList.remove('grid');
+        sectionSiswa.classList.add('hidden'); sectionSiswa.classList.remove('grid');
+        sectionRekap.classList.add('hidden');
+        sectionPengaturan.classList.add('hidden');
+        resetNavLinks();
+        navMapel.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 bg-slate-800 text-white rounded-lg font-medium transition";
+        pageTitle.textContent = "Mata Pelajaran";
+        if(window.innerWidth < 768) toggleSidebar();
+        loadSubjects();
     });
 
     navSiswa.addEventListener('click', () => {
         sectionSiswa.classList.remove('hidden'); sectionSiswa.classList.add('grid');
         sectionGuru.classList.add('hidden'); sectionGuru.classList.remove('grid');
-        sectionRekap.classList.add('hidden'); sectionRekap.classList.remove('grid');
-        sectionPengaturan.classList.add('hidden'); sectionPengaturan.classList.remove('grid');
+        sectionMapel.classList.add('hidden'); sectionMapel.classList.remove('grid');
+        sectionRekap.classList.add('hidden');
+        sectionPengaturan.classList.add('hidden');
         resetNavLinks();
-        navSiswa.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 bg-emerald-500/10 text-emerald-400 rounded-xl font-medium transition hover:bg-slate-800";
-        pageTitle.textContent = "Basis Data Siswa Utama";
+        navSiswa.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 bg-slate-800 text-white rounded-lg font-medium transition";
+        pageTitle.textContent = "Data Siswa";
         if(window.innerWidth < 768) toggleSidebar();
         loadStudents();
     });
 
     navRekap.addEventListener('click', () => {
-        sectionRekap.classList.remove('hidden'); sectionRekap.classList.add('grid');
+        sectionRekap.classList.remove('hidden'); 
         sectionGuru.classList.add('hidden'); sectionGuru.classList.remove('grid');
+        sectionMapel.classList.add('hidden'); sectionMapel.classList.remove('grid');
         sectionSiswa.classList.add('hidden'); sectionSiswa.classList.remove('grid');
-        sectionPengaturan.classList.add('hidden'); sectionPengaturan.classList.remove('grid');
+        sectionPengaturan.classList.add('hidden');
         resetNavLinks();
-        navRekap.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 bg-emerald-500/10 text-emerald-400 rounded-xl font-medium transition hover:bg-slate-800";
+        navRekap.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 bg-slate-800 text-white rounded-lg font-medium transition";
         pageTitle.textContent = "Rekap Nilai UM";
         if(window.innerWidth < 768) toggleSidebar();
         loadRekapNilai(currentRekapClass);
     });
 
     navPengaturan.addEventListener('click', () => {
-        sectionPengaturan.classList.remove('hidden'); sectionPengaturan.classList.add('grid');
+        sectionPengaturan.classList.remove('hidden');
         sectionGuru.classList.add('hidden'); sectionGuru.classList.remove('grid');
+        sectionMapel.classList.add('hidden'); sectionMapel.classList.remove('grid');
         sectionSiswa.classList.add('hidden'); sectionSiswa.classList.remove('grid');
-        sectionRekap.classList.add('hidden'); sectionRekap.classList.remove('grid');
+        sectionRekap.classList.add('hidden');
         resetNavLinks();
-        navPengaturan.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 bg-emerald-500/10 text-emerald-400 rounded-xl font-medium transition hover:bg-slate-800";
-        pageTitle.textContent = "Pengaturan Sistem";
+        navPengaturan.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 bg-slate-800 text-white rounded-lg font-medium transition";
+        pageTitle.textContent = "Pengaturan";
         if(window.innerWidth < 768) toggleSidebar();
         loadAdminTokens();
     });
@@ -104,11 +130,42 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- SECTION 1: GURU & MAPEL ---
     const subjectForm = document.getElementById('subjectForm');
     const subjectNameInput = document.getElementById('subjectName');
+    const subjectCategorySelect = document.getElementById('subjectCategory');
     const teacherForm = document.getElementById('teacherForm');
     const teacherNameInput = document.getElementById('teacherName');
     const teacherSubjectSelect = document.getElementById('teacherSubject');
     const teacherTableBody = document.getElementById('teacherTableBody');
     const teacherCountSpan = document.getElementById('teacherCount');
+    const subjectTableBody = document.getElementById('subjectTableBody');
+    const subjectCountSpan = document.getElementById('subjectCount');
+    
+    // New Subject Fields
+    const subjectTypeSelect = document.getElementById('subjectType');
+    const subjectTargetClassSelect = document.getElementById('subjectTargetClass');
+    const subjectTypeContainer = document.getElementById('subjectTypeContainer');
+    const subjectTargetClassContainer = document.getElementById('subjectTargetClassContainer');
+    const btnExportAllClass = document.getElementById('btnExportAllClass');
+
+    // Toggle visibility logic
+    const updateSubjectFieldsVisibility = () => {
+        const category = subjectCategorySelect.value;
+        const type = subjectTypeSelect.value;
+        
+        if (category === 'Pesantren') {
+            subjectTypeContainer.classList.add('hidden');
+            subjectTargetClassContainer.classList.add('hidden');
+        } else {
+            subjectTypeContainer.classList.remove('hidden');
+            if (type === 'Peminatan') {
+                subjectTargetClassContainer.classList.remove('hidden');
+            } else {
+                subjectTargetClassContainer.classList.add('hidden');
+            }
+        }
+    };
+
+    subjectCategorySelect.addEventListener('change', updateSubjectFieldsVisibility);
+    subjectTypeSelect.addEventListener('change', updateSubjectFieldsVisibility);
 
     let subjectsList = [];
 
@@ -116,17 +173,103 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const querySnapshot = await getDocs(collection(window.db, "subjects"));
             subjectsList = [];
+            subjectTableBody.innerHTML = '';
+            let count = 0;
             querySnapshot.forEach((docSnap) => {
-                subjectsList.push({ id: docSnap.id, name: docSnap.data().name });
+                count++;
+                const sub = { id: docSnap.id, ...docSnap.data() };
+                subjectsList.push(sub);
+                
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition";
+                
+                let typeBadge = '';
+                if (sub.category === 'Nasional') {
+                    const isPeminatan = sub.type === 'Peminatan';
+                    typeBadge = `<span class="ml-2 ${isPeminatan ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-slate-50 text-slate-600 border-slate-100'} px-2 py-0.5 rounded border text-[10px]">
+                        ${isPeminatan ? 'Peminatan ' + (sub.targetClass || '') : 'Umum'}
+                    </span>`;
+                }
+
+                tr.innerHTML = `
+                    <td class="px-4 py-3 text-slate-400">${count}</td>
+                    <td class="px-4 py-3 font-bold text-slate-800">
+                        ${sub.name}
+                        ${typeBadge}
+                    </td>
+                    <td class="px-4 py-3">
+                        <span class="${sub.category === 'Nasional' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-amber-50 text-amber-600 border-amber-100'} px-2 py-1 rounded border text-xs">
+                            ${sub.category || 'Nasional'}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-right">
+                        <button class="delete-subject text-red-500 hover:text-red-700" data-id="${sub.id}"><i class="fa-solid fa-trash-can"></i></button>
+                    </td>
+                `;
+                subjectTableBody.appendChild(tr);
             });
+            
+            if (count === 0) {
+                subjectTableBody.innerHTML = `<tr><td colspan="4" class="px-4 py-8 text-center text-slate-400 italic">Belum ada mata pelajaran.</td></tr>`;
+            }
+            subjectCountSpan.textContent = count;
+
+            // Update Teacher Subject Dropdown (Categorized)
             teacherSubjectSelect.innerHTML = '<option value="">-- Pilih Pelajaran --</option>';
+            
+            const groupNasionalUmum = document.createElement('optgroup');
+            groupNasionalUmum.label = "NASIONAL - UMUM";
+            const groupNasionalPeminatan = document.createElement('optgroup');
+            groupNasionalPeminatan.label = "NASIONAL - PEMINATAN";
+            const groupPesantren = document.createElement('optgroup');
+            groupPesantren.label = "PONDOK PESANTREN";
+            
             subjectsList.forEach(sub => {
                 const opt = document.createElement('option');
                 opt.value = sub.name; 
-                opt.textContent = sub.name;
-                teacherSubjectSelect.appendChild(opt);
+                
+                if (sub.category === 'Pesantren') {
+                    opt.textContent = sub.name;
+                    groupPesantren.appendChild(opt);
+                } else {
+                    if (sub.type === 'Peminatan') {
+                        opt.textContent = `${sub.name} (${sub.targetClass || 'Semua'})`;
+                        groupNasionalPeminatan.appendChild(opt);
+                    } else {
+                        opt.textContent = sub.name;
+                        groupNasionalUmum.appendChild(opt);
+                    }
+                }
             });
+
+            if (groupNasionalUmum.children.length > 0) teacherSubjectSelect.appendChild(groupNasionalUmum);
+            if (groupNasionalPeminatan.children.length > 0) teacherSubjectSelect.appendChild(groupNasionalPeminatan);
+            if (groupPesantren.children.length > 0) teacherSubjectSelect.appendChild(groupPesantren);
+
+            attachSubjectListeners();
         } catch(err) { console.error(err); }
+    };
+
+    const attachSubjectListeners = () => {
+        document.querySelectorAll('.delete-subject').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const id = e.currentTarget.dataset.id;
+                const result = await Swal.fire({
+                    title: 'Hapus Pelajaran?',
+                    text: "Pastikan tidak ada guru yang menggunakan pelajaran ini!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ef4444',
+                    confirmButtonText: 'Ya, Hapus!'
+                });
+                if (result.isConfirmed) {
+                    window.utils.showLoading("Menghapus...");
+                    await deleteDoc(doc(window.db, "subjects", id));
+                    window.utils.showSuccess('Terhapus!', "Mata pelajaran telah dihapus.");
+                    loadSubjects();
+                }
+            });
+        });
     };
 
     const loadTeachers = async () => {
@@ -140,21 +283,27 @@ document.addEventListener('DOMContentLoaded', () => {
                     const token = docSnap.id; 
                     const teacher = docSnap.data();
                     const tr = document.createElement('tr');
-                    tr.className = "border-b border-slate-100 hover:bg-slate-50 transition";
+                    tr.className = "hover:bg-slate-50 transition";
                     tr.innerHTML = `
-                        <td class="px-4 py-4 font-medium text-slate-800">${teacher.name}</td>
-                        <td class="px-4 py-4"><span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded border border-blue-200">${teacher.subject}</span></td>
-                        <td class="px-4 py-4"><div class="flex items-center gap-2">
-                            <code class="bg-slate-100 px-2 py-1 rounded text-emerald-600 font-bold">${token}</code>
-                            <button class="copy-tkn text-slate-400 hover:text-emerald-500" data-token="${token}"><i class="fa-regular fa-copy"></i></button>
-                        </div></td>
-                        <td class="px-4 py-4 text-right"><button class="delete-teacher text-red-400 hover:text-red-600" data-token="${token}"><i class="fa-solid fa-trash-can"></i></button></td>
+                        <td class="px-4 py-3 font-bold text-slate-800">${teacher.name}</td>
+                        <td class="px-4 py-3"><span class="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded">${teacher.subject}</span></td>
+                        <td class="px-4 py-3">
+                            <div class="flex items-center gap-2">
+                                <code class="bg-slate-100 px-2 py-1 rounded text-indigo-600 font-bold">${token}</code>
+                                <button class="copy-tkn text-slate-400 hover:text-indigo-600" data-token="${token}"><i class="fa-regular fa-copy"></i></button>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-right">
+                            <button class="delete-teacher text-red-500 hover:text-red-700" data-token="${token}">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </td>
                     `;
                     teacherTableBody.appendChild(tr);
                 });
                 attachTeacherListeners();
             } else {
-                teacherTableBody.innerHTML = `<tr><td colspan="4" class="px-4 py-8 text-center text-slate-400">Belum ada guru.</td></tr>`;
+                teacherTableBody.innerHTML = `<tr><td colspan="4" class="px-4 py-8 text-center text-slate-400 italic">Belum ada guru.</td></tr>`;
             }
             teacherCountSpan.textContent = count;
         } catch(err) {}
@@ -175,7 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (c.isConfirmed) {
                     window.utils.showLoading("Menghapus...");
                     await deleteDoc(doc(window.db, "teachers", token));
-                    window.utils.showSuccess('Terhapus!', "");
+                    window.utils.showSuccess('Terhapus!', "Data guru telah dihapus.");
                     loadTeachers();
                 }
             });
@@ -186,9 +335,20 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         window.utils.showLoading("Menyimpan...");
         try {
-            await addDoc(collection(window.db, "subjects"), { name: subjectNameInput.value.trim() });
+            const cat = subjectCategorySelect.value;
+            const type = cat === 'Nasional' ? subjectTypeSelect.value : 'Umum';
+            const target = (cat === 'Nasional' && type === 'Peminatan') ? subjectTargetClassSelect.value : '';
+
+            await addDoc(collection(window.db, "subjects"), { 
+                name: subjectNameInput.value.trim(),
+                category: cat,
+                type: type,
+                targetClass: target
+            });
             window.utils.showSuccess("Berhasil", "Mata pelajaran ditambahkan.");
-            subjectForm.reset(); loadSubjects();
+            subjectForm.reset(); 
+            subjectTargetClassContainer.classList.add('hidden');
+            loadSubjects();
         } catch(err) { window.utils.showError("Error", err.message); }
     });
 
@@ -209,7 +369,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const studentForm = document.getElementById('studentForm');
     const studentNISInput = document.getElementById('studentNIS');
     const studentNameNewInput = document.getElementById('studentNameNew');
-    const studentClassSelect = document.getElementById('studentClass');
     const studentTableBody = document.getElementById('studentTableBody');
     const studentCountSpan = document.getElementById('studentCount');
 
@@ -224,33 +383,27 @@ document.addEventListener('DOMContentLoaded', () => {
                     count++;
                     const s = docSnap.data();
                     const tr = document.createElement('tr');
-                    tr.className = "border-b border-slate-100 hover:bg-slate-50";
+                    tr.className = "hover:bg-slate-50 transition";
                     tr.innerHTML = `
-                        <td class="px-4 py-3 font-medium text-slate-500">${s.nis || '-'}</td>
+                        <td class="px-4 py-3 text-slate-500 font-mono">${s.nis || '-'}</td>
                         <td class="px-4 py-3 font-bold text-slate-800">${s.name}</td>
-                        <td class="px-4 py-3"><span class="px-2 py-1 rounded bg-indigo-50 text-indigo-600 text-xs font-bold border border-indigo-100">${s.kelas || '-'}</span></td>
+                        <td class="px-4 py-3 text-center"><span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-600 text-xs font-bold border border-indigo-100">${s.kelas || '-'}</span></td>
                         <td class="px-4 py-3 text-xs text-slate-400">${new Date(s.createdAt).toLocaleDateString()}</td>
                         <td class="px-4 py-3 text-right">
-                            <button class="delete-student text-red-400 hover:text-red-600" data-id="${docSnap.id}"><i class="fa-solid fa-trash-can"></i></button>
+                            <div class="flex justify-end gap-1">
+                                <button class="edit-student text-indigo-500 hover:bg-slate-100 p-1.5 rounded" data-id="${docSnap.id}" data-nis="${s.nis || ''}" data-name="${s.name}" data-kelas="${s.kelas || ''}"><i class="fa-solid fa-user-pen"></i></button>
+                                <button class="delete-student text-rose-500 hover:bg-slate-100 p-1.5 rounded" data-id="${docSnap.id}"><i class="fa-solid fa-trash-can"></i></button>
+                            </div>
                         </td>
                     `;
                     studentTableBody.appendChild(tr);
                 });
                 attachStudentListeners();
             } else {
-                studentTableBody.innerHTML = `<tr><td colspan="5" class="px-4 py-8 text-center text-slate-400">Belum ada siswa yang didaftarkan.</td></tr>`;
+                studentTableBody.innerHTML = `<tr><td colspan="5" class="px-4 py-8 text-center text-slate-400 italic">Belum ada siswa yang didaftarkan.</td></tr>`;
             }
             studentCountSpan.textContent = count;
-        } catch(err) {
-            console.error(err);
-            // Fallback unindexed
-            try {
-                const qs2 = await getDocs(collection(window.db, "students"));
-                studentTableBody.innerHTML = ''; let count=0;
-                qs2.forEach(docSnap => { count++; studentTableBody.innerHTML += `<tr><td class="px-4 py-3" colspan="3">${docSnap.data().name} (${docSnap.data().kelas || '-'})</td><td colspan="2"><button class="delete-student text-red-400" data-id="${docSnap.id}">Hapus</button></td></tr>`; });
-                studentCountSpan.textContent = count; attachStudentListeners();
-            } catch(e) {}
-        }
+        } catch(err) { console.error(err); }
     };
 
     const attachStudentListeners = () => {
@@ -261,8 +414,72 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (c.isConfirmed) {
                     window.utils.showLoading("Menghapus...");
                     await deleteDoc(doc(window.db, "students", id));
-                    window.utils.showSuccess('Terhapus!', "");
+                    window.utils.showSuccess('Terhapus!', "Data siswa telah dihapus.");
                     loadStudents();
+                }
+            });
+        });
+
+        document.querySelectorAll('.edit-student').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const id = btn.dataset.id;
+                const oldNis = btn.dataset.nis;
+                const oldName = btn.dataset.name;
+                const oldKelas = btn.dataset.kelas;
+
+                // Build class options
+                let classOptions = '';
+                classesList.forEach(c => {
+                    classOptions += `<option value="${c.name}" ${c.name === oldKelas ? 'selected' : ''}>${c.name}</option>`;
+                });
+
+                const { value: formValues } = await Swal.fire({
+                    title: 'Edit Data Siswa',
+                    html: `
+                        <div class="text-left space-y-3">
+                            <div>
+                                <label class="text-xs font-bold text-slate-400 uppercase">NIS / Nomor Absen</label>
+                                <input id="swal-nis" class="swal2-input !mt-1 !w-full !mx-0" value="${oldNis}" placeholder="Opsional">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-400 uppercase">Nama Siswa</label>
+                                <input id="swal-name" class="swal2-input !mt-1 !w-full !mx-0" value="${oldName}" placeholder="Nama Lengkap">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-400 uppercase">Kelas</label>
+                                <select id="swal-kelas" class="swal2-input !mt-1 !w-full !mx-0">
+                                    <option value="">-- Pilih Kelas --</option>
+                                    ${classOptions}
+                                </select>
+                            </div>
+                        </div>
+                    `,
+                    focusConfirm: false,
+                    showCancelButton: true,
+                    confirmButtonColor: '#4f46e5',
+                    preConfirm: () => {
+                        const name = document.getElementById('swal-name').value.trim();
+                        if (!name) {
+                            Swal.showValidationMessage('Nama siswa wajib diisi');
+                            return false;
+                        }
+                        return {
+                            nis: document.getElementById('swal-nis').value.trim(),
+                            name: name,
+                            kelas: document.getElementById('swal-kelas').value
+                        }
+                    }
+                });
+
+                if (formValues) {
+                    window.utils.showLoading("Mengupdate...");
+                    try {
+                        await updateDoc(doc(window.db, "students", id), formValues);
+                        window.utils.showSuccess("Berhasil", "Data siswa telah diperbarui.");
+                        loadStudents();
+                    } catch(err) {
+                        window.utils.showError("Gagal", err.message);
+                    }
                 }
             });
         });
@@ -284,21 +501,169 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch(err) { window.utils.showError("Error", err.message); }
     });
 
-    // --- SECTION 3: NILAI UM (INTERAKTIF + EKSPOR PER SISWA) ---
-    let currentRekapClass = "XII IPA";
+    // --- NEW: CLASS MANAGEMENT ---
+    let classesList = [];
+
+    const loadClasses = async () => {
+        try {
+            const querySnapshot = await getDocs(collection(window.db, "classes"));
+            classesList = [];
+            querySnapshot.forEach(docSnap => {
+                classesList.push({ id: docSnap.id, ...docSnap.data() });
+            });
+
+            // Sort alphabetical
+            classesList.sort((a, b) => a.name.localeCompare(b.name));
+
+            // Populate Student Form
+            studentClassSelect.innerHTML = '<option value="">-- Pilih Kelas --</option>';
+            subjectTargetClassSelect.innerHTML = '<option value="">-- Pilih Kelas --</option>';
+            classesList.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.name; opt.textContent = c.name;
+                studentClassSelect.appendChild(opt.cloneNode(true));
+                subjectTargetClassSelect.appendChild(opt);
+            });
+
+            // Populate Rekap Filters
+            renderRekapFilters();
+            
+            // Populate Class Table in Settings
+            renderClassTable();
+
+        } catch(err) { console.error(err); }
+    };
+
+    const renderRekapFilters = () => {
+        rekapClassFilters.innerHTML = '';
+        classesList.forEach((c, index) => {
+            const btn = document.createElement('button');
+            const isActive = c.name === currentRekapClass;
+            btn.className = `rekap-class-btn px-4 py-1.5 rounded-lg text-sm font-medium transition ${isActive ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'}`;
+            btn.textContent = c.name;
+            btn.dataset.class = c.name;
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.rekap-class-btn').forEach(b => {
+                    b.className = 'rekap-class-btn px-4 py-1.5 rounded-lg text-sm font-medium transition bg-white text-slate-600 hover:bg-slate-100 border border-slate-200';
+                });
+                btn.className = 'rekap-class-btn px-4 py-1.5 rounded-lg text-sm font-medium transition bg-indigo-600 text-white shadow-sm';
+                loadRekapNilai(c.name);
+            });
+            rekapClassFilters.appendChild(btn);
+        });
+
+        if (classesList.length > 0 && !classesList.find(c => c.name === currentRekapClass)) {
+            currentRekapClass = classesList[0].name;
+            renderRekapFilters();
+        }
+    };
+
+    const renderClassTable = () => {
+        classTableBody.innerHTML = '';
+        classesList.forEach((c, i) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="px-4 py-2 text-slate-400 font-medium">${i + 1}</td>
+                <td class="px-4 py-2 font-bold text-slate-800">${c.name}</td>
+                <td class="px-4 py-2 text-right">
+                    <div class="flex justify-end gap-1">
+                        <button class="edit-class text-indigo-500 hover:bg-slate-100 p-1.5 rounded" data-id="${c.id}" data-name="${c.name}"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button class="delete-class text-rose-500 hover:bg-slate-100 p-1.5 rounded" data-id="${c.id}" data-name="${c.name}"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                </td>
+            `;
+            classTableBody.appendChild(tr);
+        });
+        attachClassListeners();
+    };
+
+    const attachClassListeners = () => {
+        document.querySelectorAll('.edit-class').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const id = btn.dataset.id;
+                const oldName = btn.dataset.name;
+                const { value: newName } = await Swal.fire({
+                    title: 'Edit Nama Kelas',
+                    input: 'text',
+                    inputValue: oldName,
+                    showCancelButton: true,
+                    confirmButtonColor: '#4f46e5',
+                });
+                if (newName && newName !== oldName) {
+                    window.utils.showLoading("Mengupdate...");
+                    await updateDoc(doc(window.db, "classes", id), { name: newName });
+                    window.utils.showSuccess("Berhasil", "Nama kelas diperbarui.");
+                    loadClasses();
+                }
+            });
+        });
+
+        document.querySelectorAll('.delete-class').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const id = btn.dataset.id;
+                const result = await Swal.fire({
+                    title: 'Hapus Kelas?',
+                    text: "Tindakan ini menghapus filter kelas, tetapi tidak data siswa.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ef4444',
+                    confirmButtonText: 'Ya, Hapus'
+                });
+                if (result.isConfirmed) {
+                    window.utils.showLoading("Menghapus...");
+                    await deleteDoc(doc(window.db, "classes", id));
+                    window.utils.showSuccess("Terhapus", "Kelas telah dihapus.");
+                    loadClasses();
+                }
+            });
+        });
+    };
+
+    btnAddClass.addEventListener('click', async () => {
+        const { value: name } = await Swal.fire({
+            title: 'Tambah Kelas Baru',
+            input: 'text',
+            inputPlaceholder: 'Cth: XII MIPA 1',
+            showCancelButton: true,
+            confirmButtonColor: '#059669',
+        });
+        if (name) {
+            window.utils.showLoading("Menyimpan...");
+            await addDoc(collection(window.db, "classes"), { name: name.trim() });
+            window.utils.showSuccess("Berhasil", "Kelas baru ditambahkan.");
+            loadClasses();
+        }
+    });
+
+    // --- SECTION 3: NILAI UM ---
+    let currentRekapClass = "";
     const rekapTableHead = document.getElementById('rekapTableHead');
     const rekapTableBody = document.getElementById('rekapTableBody');
     const rekapStudentCount = document.getElementById('rekapStudentCount');
 
-    // Cache data so we don't re-fetch on every tab click
-    let cachedMapels = null; // { token: subjectName }
-    let cachedAllStudents = null; // [{ id, name, nis, kelas, ... }]
-    let cachedAllGrades = null; // { token: { studentId: gradeData } }
+    let cachedMapels = null;
+    let cachedAllStudents = null;
+    let cachedAllGrades = null;
 
     const fetchAllRekapData = async () => {
+        const subjSnap = await getDocs(collection(window.db, "subjects"));
+        const subjectCategoryMap = {};
+        subjSnap.forEach(d => {
+            const data = d.data();
+            subjectCategoryMap[data.name] = {
+                category: data.category || "Nasional",
+                type: data.type || "Umum",
+                targetClass: data.targetClass || ""
+            };
+        });
+
         const tSnap = await getDocs(collection(window.db, "teachers"));
         cachedMapels = {};
-        tSnap.forEach(d => { cachedMapels[d.id] = d.data().subject; });
+        tSnap.forEach(d => { 
+            const subjName = d.data().subject;
+            const meta = subjectCategoryMap[subjName] || { category: "Nasional", type: "Umum", targetClass: "" };
+            cachedMapels[d.id] = { name: subjName, ...meta };
+        });
 
         const sSnap = await getDocs(collection(window.db, "students"));
         cachedAllStudents = [];
@@ -311,66 +676,52 @@ document.addEventListener('DOMContentLoaded', () => {
                 const gSnap = await getDocs(collection(window.db, `grades_${tkn}`));
                 cachedAllGrades[tkn] = {};
                 gSnap.forEach(g => { cachedAllGrades[tkn][g.id] = g.data(); });
-            } catch(e) {
-                cachedAllGrades[tkn] = {};
-            }
+            } catch(e) { cachedAllGrades[tkn] = {}; }
         }
     };
 
     const loadRekapNilai = async (kelas) => {
         currentRekapClass = kelas;
-
-        rekapTableBody.innerHTML = `<tr><td colspan="20" class="px-4 py-10 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin text-2xl mb-2 text-indigo-500"></i><br>Memuat data nilai...</td></tr>`;
+        rekapTableBody.innerHTML = `<tr><td colspan="4" class="px-4 py-8 text-center text-slate-400 font-italic">Memuat data...</td></tr>`;
 
         try {
-            if (!cachedMapels) {
-                await fetchAllRekapData();
-            }
-
-            const tokenKeys = Object.keys(cachedMapels);
+            if (!cachedMapels) await fetchAllRekapData();
             const filteredStudents = cachedAllStudents
                 .filter(s => s.kelas === kelas)
                 .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
             rekapStudentCount.textContent = filteredStudents.length;
 
-            // Build header
-            let headerHTML = `<tr>
-                <th class="px-3 py-3 text-center w-12 whitespace-nowrap">No</th>
-                <th class="px-4 py-3 whitespace-nowrap">NISN</th>
-                <th class="px-4 py-3 whitespace-nowrap">Nama Lengkap</th>
-                <th class="px-3 py-3 text-center whitespace-nowrap w-28">Aksi</th></tr>`;
-            rekapTableHead.innerHTML = headerHTML;
+            rekapTableHead.innerHTML = `<tr>
+                <th class="px-4 py-2 text-center w-12">No</th>
+                <th class="px-4 py-2">NISN</th>
+                <th class="px-4 py-2">Nama Siswa</th>
+                <th class="px-4 py-2 text-center w-28">Aksi</th>
+            </tr>`;
 
-            // Build body
             if (filteredStudents.length === 0) {
-                rekapTableBody.innerHTML = `<tr><td colspan="4" class="px-4 py-14 text-center text-slate-400"><i class="fa-solid fa-inbox text-4xl mb-3 block text-slate-300"></i>Belum ada siswa di kelas <b>${kelas}</b>.</td></tr>`;
+                rekapTableBody.innerHTML = `<tr><td colspan="4" class="px-4 py-8 text-center text-slate-400">Tidak ada siswa di kelas <b>${kelas}</b>.</td></tr>`;
                 return;
             }
 
             let bodyHTML = '';
             filteredStudents.forEach((s, idx) => {
-                bodyHTML += `<tr class="group">
-                    <td class="px-3 py-3 text-center text-xs font-semibold text-slate-400">${idx + 1}</td>
-                    <td class="px-4 py-3"><code class="bg-slate-100 text-slate-600 text-xs px-1.5 py-0.5 rounded font-mono">${s.nis || '-'}</code></td>
-                    <td class="px-4 py-3 font-semibold text-slate-800 whitespace-nowrap">${s.name}</td>
-                    <td class="px-3 py-3 text-center">
-                        <button class="btn-export-siswa bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5" data-student-id="${s.id}" title="Ekspor nilai ${s.name}">
-                            <i class="fa-solid fa-download text-[10px]"></i> Excel
+                bodyHTML += `<tr class="border-b border-slate-100 hover:bg-slate-50 transition">
+                    <td class="px-4 py-3 text-center text-slate-400">${idx + 1}</td>
+                    <td class="px-4 py-3 text-sm font-mono text-slate-500">${s.nis || '-'}</td>
+                    <td class="px-4 py-3 font-bold text-slate-800">${s.name}</td>
+                    <td class="px-4 py-3 text-center">
+                        <button class="btn-export-siswa bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold px-3 py-1.5 rounded transition shadow-sm" data-student-id="${s.id}">
+                            Excel
                         </button>
                     </td>
                 </tr>`;
             });
 
             rekapTableBody.innerHTML = bodyHTML;
-
-            // Attach per-student export listeners
             attachRekapExportListeners();
 
-        } catch(err) {
-            console.error(err);
-            rekapTableBody.innerHTML = `<tr><td colspan="20" class="px-4 py-10 text-center text-red-500">Error: ${err.message}</td></tr>`;
-        }
+        } catch(err) { console.error(err); }
     };
 
     const attachRekapExportListeners = () => {
@@ -389,270 +740,379 @@ document.addEventListener('DOMContentLoaded', () => {
         const tokenKeys = Object.keys(cachedMapels);
         const wb = XLSX.utils.book_new();
 
-        // ====== STYLE DEFINITIONS ======
+        // --- SHARED STYLES ---
         const borderThin = {
-            top: { style: "thin", color: { rgb: "D1D5DB" } },
-            bottom: { style: "thin", color: { rgb: "D1D5DB" } },
-            left: { style: "thin", color: { rgb: "D1D5DB" } },
-            right: { style: "thin", color: { rgb: "D1D5DB" } }
+            top: { style: "thin", color: { rgb: "334155" } },
+            bottom: { style: "thin", color: { rgb: "334155" } },
+            left: { style: "thin", color: { rgb: "334155" } },
+            right: { style: "thin", color: { rgb: "334155" } }
         };
 
-        const sTitle = {
-            font: { name: "Calibri", sz: 14, bold: true, color: { rgb: "1E3A5F" } },
-            alignment: { horizontal: "left", vertical: "center" }
+        const styleTitle = {
+            font: { bold: true, sz: 14, color: { rgb: "1E1B4B" } },
+            alignment: { horizontal: "center", vertical: "center" }
         };
 
-        const sLabel = {
-            font: { name: "Calibri", sz: 11, bold: true, color: { rgb: "475569" } },
-            fill: { fgColor: { rgb: "F1F5F9" } },
-            border: borderThin,
-            alignment: { horizontal: "left", vertical: "center" }
-        };
-
-        const sValue = {
-            font: { name: "Calibri", sz: 11, color: { rgb: "1E293B" } },
-            fill: { fgColor: { rgb: "FFFFFF" } },
-            border: borderThin,
-            alignment: { horizontal: "left", vertical: "center" }
-        };
-
-        const sHeader = {
-            font: { name: "Calibri", sz: 10, bold: true, color: { rgb: "FFFFFF" } },
-            fill: { fgColor: { rgb: "4338CA" } },
-            border: borderThin,
-            alignment: { horizontal: "center", vertical: "center", wrapText: true }
-        };
-
-        const sHeaderLeft = {
-            ...sHeader,
-            alignment: { horizontal: "left", vertical: "center", wrapText: true }
-        };
-
-        const sNo = {
-            font: { name: "Calibri", sz: 10, color: { rgb: "64748B" } },
+        const styleHeader = {
+            font: { bold: true, color: { rgb: "FFFFFF" } },
+            fill: { fgColor: { rgb: "4F46E5" } },
             border: borderThin,
             alignment: { horizontal: "center", vertical: "center" }
         };
 
-        const sMapel = {
-            font: { name: "Calibri", sz: 10, bold: true, color: { rgb: "1E293B" } },
+        const styleLabel = {
+            font: { bold: true, color: { rgb: "475569" } },
+            fill: { fgColor: { rgb: "F1F5F9" } },
+            border: borderThin
+        };
+
+        const styleCell = {
             border: borderThin,
             alignment: { horizontal: "left", vertical: "center" }
         };
 
-        const sNilai = {
-            font: { name: "Calibri", sz: 11, color: { rgb: "1E293B" } },
+        const styleScore = {
             border: borderThin,
             alignment: { horizontal: "center", vertical: "center" },
             numFmt: "0"
         };
 
-        const sNilaiUM = {
-            font: { name: "Calibri", sz: 11, bold: true, color: { rgb: "065F46" } },
-            fill: { fgColor: { rgb: "D1FAE5" } },
+        const styleAvg = {
+            font: { bold: true, color: { rgb: "047857" } },
+            fill: { fgColor: { rgb: "ECFDF5" } },
             border: borderThin,
             alignment: { horizontal: "center", vertical: "center" },
             numFmt: "0.0"
         };
 
-        const sNoAlt = { ...sNo, fill: { fgColor: { rgb: "F8FAFC" } } };
-        const sMapelAlt = { ...sMapel, fill: { fgColor: { rgb: "F8FAFC" } } };
-        const sNilaiAlt = { ...sNilai, fill: { fgColor: { rgb: "F8FAFC" } } };
-        const sNilaiUMAlt = {
-            ...sNilaiUM,
-            fill: { fgColor: { rgb: "ECFDF5" } }
+        const buildSheet = (sheetTitle, filterCategory) => {
+            const filteredTokens = tokenKeys.filter(tkn => {
+                const mapel = cachedMapels[tkn];
+                const catMatch = (filterCategory === "Nasional") ? (mapel.category === "Nasional" || !mapel.category) : (mapel.category === "Pesantren");
+                if (!catMatch) return false;
+                if (filterCategory === "Nasional" && mapel.type === 'Peminatan') {
+                    return mapel.targetClass === student.kelas;
+                }
+                return true;
+            });
+
+            // Grid Layout
+            const wsData = [
+                [{ v: sheetTitle, s: styleTitle }, "", "", "", ""],
+                [{ v: "LAPORAN HASIL UJIAN MADRASAH", s: { font: { sz: 10, italic: true }, alignment: { horizontal: "center" } } }, "", "", "", ""],
+                [],
+                [{ v: "Nama Siswa", s: styleLabel }, { v: student.name, s: styleCell }, "", { v: "NIS", s: styleLabel }, { v: student.nis || '-', s: styleScore }],
+                [{ v: "Kelas", s: styleLabel }, { v: student.kelas || '-', s: styleCell }, "", { v: "Tanggal", s: styleLabel }, { v: new Date().toLocaleDateString('id-ID'), s: styleScore }],
+                [],
+                [
+                    { v: "No", s: styleHeader },
+                    { v: "Mata Pelajaran", s: styleHeader },
+                    { v: "Nilai Praktek", s: styleHeader },
+                    { v: "Nilai Tulis", s: styleHeader },
+                    { v: "Rata-rata UM", s: styleHeader }
+                ]
+            ];
+
+            filteredTokens.forEach((tkn, i) => {
+                const grades = cachedAllGrades[tkn] ? cachedAllGrades[tkn][studentId] : null;
+                const g = grades || { praktek: 0, tulis: 0, average: 0 };
+                wsData.push([
+                    { v: i + 1, s: styleScore },
+                    { v: cachedMapels[tkn].name, s: styleCell },
+                    { v: Number(g.praktek || 0), s: styleScore, t: 'n' },
+                    { v: Number(g.tulis || 0), s: styleScore, t: 'n' },
+                    { v: Number(g.average || 0), s: styleAvg, t: 'n' }
+                ]);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            
+            // Merging headers
+            ws['!merges'] = [
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } },
+                { s: { r: 1, c: 0 }, e: { r: 1, c: 4 } }
+            ];
+            
+            // Column Widths
+            ws['!cols'] = [
+                { wch: 5 }, { wch: 35 }, { wch: 15 }, { wch: 15 }, { wch: 15 }
+            ];
+
+            return ws;
         };
 
-        // ====== BUILD SHEET DATA ======
-        const wsData = [
-            [{ v: "REKAP NILAI UJIAN MADRASAH", s: sTitle }, "", "", "", ""],
-            [],
-            [{ v: "Nama Siswa", s: sLabel }, { v: student.name, s: sValue }, "", "", ""],
-            [{ v: "NIS / No. Absen", s: sLabel }, { v: student.nis || '-', s: sValue }, "", "", ""],
-            [{ v: "Kelas", s: sLabel }, { v: student.kelas || '-', s: sValue }, "", "", ""],
-            [],
-            [
-                { v: "No", s: sHeader },
-                { v: "Mata Pelajaran", s: sHeaderLeft },
-                { v: "Nilai Praktek", s: sHeader },
-                { v: "Nilai Tulis", s: sHeader },
-                { v: "Nilai UM", s: sHeader }
-            ]
-        ];
+        const wsNasional = buildSheet("DATA NILAI KURIKULUM NASIONAL", "Nasional");
+        XLSX.utils.book_append_sheet(wb, wsNasional, "Nasional");
 
-        tokenKeys.forEach((tkn, i) => {
-            const grades = cachedAllGrades[tkn] ? cachedAllGrades[tkn][studentId] : null;
-            const g = grades || { praktek: 0, tulis: 0, average: 0 };
-            const praktek = g.praktek !== '' && g.praktek !== undefined ? Number(g.praktek) : 0;
-            const tulis = g.tulis !== '' && g.tulis !== undefined ? Number(g.tulis) : 0;
-            const um = g.average !== '' && g.average !== undefined ? Number(g.average) : 0;
+        const wsPesantren = buildSheet("DATA NILAI KURIKULUM PESANTREN", "Pesantren");
+        XLSX.utils.book_append_sheet(wb, wsPesantren, "Pesantren");
 
-            const isAlt = i % 2 === 1;
-            wsData.push([
-                { v: i + 1, t: "n", s: isAlt ? sNoAlt : sNo },
-                { v: cachedMapels[tkn], s: isAlt ? sMapelAlt : sMapel },
-                { v: praktek, t: "n", s: isAlt ? sNilaiAlt : sNilai },
-                { v: tulis, t: "n", s: isAlt ? sNilaiAlt : sNilai },
-                { v: um, t: "n", s: isAlt ? sNilaiUMAlt : sNilaiUM }
-            ]);
-        });
-
-        const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-        // Column widths
-        ws['!cols'] = [
-            { wpx: 45 },   // No
-            { wpx: 220 },  // Mata Pelajaran
-            { wpx: 110 },  // Nilai Praktek
-            { wpx: 110 },  // Nilai Tulis
-            { wpx: 110 }   // Nilai UM
-        ];
-
-        // Row heights
-        ws['!rows'] = [
-            { hpx: 32 },  // Title
-            { hpx: 10 },  // Spacer
-            { hpx: 24 },  // Nama
-            { hpx: 24 },  // NIS
-            { hpx: 24 },  // Kelas
-            { hpx: 10 },  // Spacer
-            { hpx: 30 }   // Header
-        ];
-        // Data rows
-        tokenKeys.forEach(() => {
-            ws['!rows'].push({ hpx: 26 });
-        });
-
-        // Merge cells for title
-        ws['!merges'] = [
-            { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }  // Title row merge
-        ];
-
-        XLSX.utils.book_append_sheet(wb, ws, "Nilai UM");
-
-        const safeName = (student.name || "Siswa").replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '_');
-        XLSX.writeFile(wb, `Nilai_UM_${safeName}.xlsx`);
+        XLSX.writeFile(wb, `Raport_UM_${student.name.replace(/\s+/g, '_')}.xlsx`);
     };
 
-    // Class tab switching
-    document.querySelectorAll('.rekap-class-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const kelas = e.currentTarget.dataset.class;
-            document.querySelectorAll('.rekap-class-btn').forEach(b => {
-                b.className = 'rekap-class-btn flex-1 sm:flex-none text-center text-slate-500 hover:text-slate-700 px-5 py-2.5 rounded-lg text-sm font-medium transition';
-            });
-            e.currentTarget.className = 'rekap-class-btn active flex-1 sm:flex-none text-center bg-white shadow-sm text-indigo-600 px-5 py-2.5 rounded-lg text-sm font-bold transition';
-            cachedMapels = null;
-            loadRekapNilai(kelas);
-        });
-    });
+    const exportAllClass = async (kelas) => {
+        if (!kelas) return;
+        window.utils.showLoading("Menyiapkan Rekapitulasi...");
+        try {
+            // Always refresh data to ensure latest subjects/grades are included
+            await fetchAllRekapData();
+            
+            const filteredStudents = cachedAllStudents.filter(s => s.kelas === kelas).sort((a,b) => (a.name || "").localeCompare(b.name || ""));
+            if (filteredStudents.length === 0) {
+                window.utils.hideLoading();
+                window.utils.showError("Data Kosong", "Tidak ada siswa di kelas ini.");
+                return;
+            }
 
-    // --- SECTION 4: PENGATURAN (ADMIN TOKEN) ---
+            const wb = XLSX.utils.book_new();
+
+            const buildBulkSheet = (sheetName, filterCategory) => {
+                const tokenKeys = Object.keys(cachedMapels);
+                const applicableTokens = tokenKeys.filter(tkn => {
+                    const mapel = cachedMapels[tkn];
+                    // Normalizing category match (Case-insensitive or fallback)
+                    const mapelCat = (mapel.category || "Nasional");
+                    const catMatch = (filterCategory === "Nasional") ? (mapelCat === "Nasional") : (mapelCat === "Pesantren");
+                    
+                    if (!catMatch) return false;
+                    
+                    // Specific filtering for Peminatan in Nasional curriculum
+                    if (filterCategory === "Nasional" && mapel.type === 'Peminatan') {
+                        return mapel.targetClass === kelas;
+                    }
+                    return true;
+                });
+
+                // Style Definitions
+                const borderThin = { top: {style:"thin"}, bottom:{style:"thin"}, left:{style:"thin"}, right:{style:"thin"} };
+                const sHeader = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "0F172A" } }, border: borderThin, alignment: { horizontal: "center", vertical: "center" } };
+                const sCell = { border: borderThin, alignment: { vertical: "center" } };
+                const sNo = { ...sCell, alignment: { horizontal: "center" } };
+                const sName = { ...sCell, font: { bold: true } };
+                const sAvgHeader = { ...sHeader, fill: { fgColor: { rgb: "059669" } } };
+
+                // Build Headers
+                const headers = [
+                    { v: "No", s: sHeader },
+                    { v: "NIS", s: sHeader },
+                    { v: "Nama Lengkap", s: sHeader }
+                ];
+                
+                let gradeColCount = 0;
+                applicableTokens.forEach(tkn => {
+                    headers.push({ v: cachedMapels[tkn].name, s: sHeader });
+                    gradeColCount++;
+                });
+                headers.push({ v: "Rata-rata UM", s: sAvgHeader });
+
+                const wsData = [
+                    [{ v: "REKAPITULASI NILAI " + filterCategory.toUpperCase() + " - KELAS: " + kelas, s: { font: { bold: true, sz: 14, color: { rgb: "1E1B4B" } }, alignment: { horizontal: "center" } } }],
+                    [{ v: "Tanggal Ekspor: " + new Date().toLocaleDateString('id-ID'), s: { alignment: { horizontal: "center" } } }],
+                    [],
+                    headers
+                ];
+
+                filteredStudents.forEach((st, idx) => {
+                    const row = [
+                        { v: idx + 1, s: sNo },
+                        { v: st.nis || '-', s: sNo },
+                        { v: st.name, s: sName }
+                    ];
+
+                    let total = 0, count = 0;
+                    applicableTokens.forEach(tkn => {
+                        const grades = cachedAllGrades[tkn] ? cachedAllGrades[tkn][st.id] : null;
+                        const um = grades ? Number(grades.average) || 0 : 0;
+                        row.push({ v: um, t: 'n', s: sNo });
+                        if (um > 0) { total += um; count++; }
+                    });
+
+                    const avg = count > 0 ? (total / count) : 0;
+                    row.push({ v: Number(avg.toFixed(1)), t: 'n', s: { ...sNo, font: { bold: true }, fill: { fgColor: { rgb: "F0FDF4" } } } });
+                    wsData.push(row);
+                });
+
+                const ws = XLSX.utils.aoa_to_sheet(wsData);
+                
+                // Merges for title (Row 1 & 2)
+                const totalCols = 3 + gradeColCount + 1; // No, NIS, Name + Mapels + Avg
+                ws['!merges'] = [
+                    { s: { r: 0, c: 0 }, e: { r: 0, c: totalCols - 1 } },
+                    { s: { r: 1, c: 0 }, e: { r: 1, c: totalCols - 1 } }
+                ];
+
+                // Column Widths
+                const colWidths = [{ wpx: 40 }, { wpx: 100 }, { wpx: 250 }];
+                applicableTokens.forEach(() => colWidths.push({ wpx: 130 }));
+                colWidths.push({ wpx: 100 });
+                ws['!cols'] = colWidths;
+
+                return ws;
+            };
+
+            XLSX.utils.book_append_sheet(wb, buildBulkSheet("Kurikulum Nasional", "Nasional"), "Nasional");
+            XLSX.utils.book_append_sheet(wb, buildBulkSheet("Pondok Pesantren", "Pesantren"), "Pesantren");
+            
+            XLSX.writeFile(wb, `Rekap_Nilai_UM_${kelas.replace(/\s+/g, '_')}.xlsx`);
+            window.utils.showSuccess("Export Berhasil", `Laporan kelas ${kelas} telah diunduh.`);
+        } catch(err) { 
+            console.error(err);
+            window.utils.showError("Gagal Ekspor", err.message);
+        }
+    };
+
+    btnExportAllClass.addEventListener('click', () => exportAllClass(currentRekapClass));
+
+    // --- PENGATURAN ---
     const adminTokenTableBody = document.getElementById('adminTokenTableBody');
     const btnGenerateAdminToken = document.getElementById('btnGenerateAdminToken');
 
     const loadAdminTokens = async () => {
-        adminTokenTableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-10 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Memuat token...</td></tr>`;
+        adminTokenTableBody.innerHTML = `<tr><td colspan="3" class="px-4 py-8 text-center text-slate-400 italic">Memuat token...</td></tr>`;
         try {
             const snap = await getDocs(collection(window.db, "admin_token"));
-            let html = '';
-            let count = 0;
+            let html = '', count = 0;
             snap.forEach(d => {
                 count++;
-                html += `
-                    <tr class="hover:bg-slate-50 transition">
-                        <td class="px-6 py-4 text-slate-400 font-medium">${count}</td>
-                        <td class="px-6 py-4 font-mono font-bold text-indigo-600 truncate max-w-[200px]">${d.id}</td>
-                        <td class="px-6 py-4 text-center">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">Aktif</span>
-                        </td>
-                        <td class="px-6 py-4 text-center">
-                            <button class="btn-delete-admin-token text-rose-500 hover:text-rose-700 transition p-2" data-id="${d.id}" title="Hapus Token">
-                                <i class="fa-solid fa-trash-can"></i>
+                html += `<tr class="hover:bg-slate-50 transition">
+                    <td class="px-4 py-3 text-slate-400 font-mono text-xs">
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-indigo-600 truncate max-w-[120px]">${d.id}</span>
+                            <button class="copy-admin-tkn text-slate-300 hover:text-indigo-600 transition" data-token="${d.id}">
+                                <i class="fa-regular fa-copy"></i>
                             </button>
-                        </td>
-                    </tr>
-                `;
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] bg-emerald-100 text-emerald-800 font-bold uppercase tracking-tighter">Aktif</span></td>
+                    <td class="px-4 py-3 text-right">
+                        <button class="btn-delete-admin-token text-rose-500 hover:text-rose-700 transition" data-id="${d.id}"><i class="fa-solid fa-trash-can"></i></button>
+                    </td>
+                </tr>`;
             });
-            if (count === 0) {
-                adminTokenTableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-10 text-center text-slate-400">Belum ada token admin.</td></tr>`;
-            } else {
-                adminTokenTableBody.innerHTML = html;
-                attachAdminTokenDeleteListeners();
-            }
-        } catch(e) {
-            adminTokenTableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-10 text-center text-rose-500">Gagal memuat data.</td></tr>`;
-        }
+            adminTokenTableBody.innerHTML = count === 0 ? `<tr><td colspan="3" class="px-4 py-8 text-center text-slate-400">Belum ada token admin.</td></tr>` : html;
+            attachAdminTokenListeners();
+        } catch(e) { console.error(e); }
     };
 
-    const attachAdminTokenDeleteListeners = () => {
+    const attachAdminTokenListeners = () => {
+        document.querySelectorAll('.copy-admin-tkn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const token = e.currentTarget.dataset.token;
+                navigator.clipboard.writeText(token);
+                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Token Admin Tersalin', showConfirmButton: false, timer: 1500 });
+            });
+        });
+
         document.querySelectorAll('.btn-delete-admin-token').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const id = e.currentTarget.dataset.id;
-                const result = await Swal.fire({
-                    title: 'Hapus Token Admin?',
-                    text: "Token ini tidak akan bisa digunakan lagi untuk login!",
-                    icon: 'warning',
+                const result = await Swal.fire({ 
+                    title: 'Hapus Token Admin?', 
+                    text: "Token ini tidak akan bisa digunakan lagi!",
+                    icon: 'warning', 
                     showCancelButton: true,
-                    confirmButtonColor: '#f43f5e',
-                    cancelButtonColor: '#64748b',
-                    confirmButtonText: 'Ya, Hapus!',
-                    cancelButtonText: 'Batal'
+                    confirmButtonColor: '#ef4444',
+                    confirmButtonText: 'Ya, Hapus'
                 });
-
                 if (result.isConfirmed) {
-                    try {
-                        await deleteDoc(doc(window.db, "admin_token", id));
-                        window.utils.showSuccess("Dihapus", "Token admin telah dihapus.");
-                        loadAdminTokens();
-                    } catch(err) {
-                        window.utils.showError("Gagal", err.message);
-                    }
+                    await deleteDoc(doc(window.db, "admin_token", id));
+                    loadAdminTokens();
                 }
             });
         });
     };
 
     btnGenerateAdminToken.addEventListener('click', async () => {
-        // Generate random token like ADMIN-XXXXXX
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        let rand = '';
-        for (let i = 0; i < 6; i++) rand += chars.charAt(Math.floor(Math.random() * chars.length));
-        const newToken = `ADMIN-${rand}`;
-
-        const result = await Swal.fire({
+        const { value: confirm } = await Swal.fire({
             title: 'Generate Token Admin Baru?',
-            text: `Token baru: ${newToken}`,
+            text: "Token akan dibuat secara otomatis untuk akses administratif.",
             icon: 'question',
             showCancelButton: true,
-            confirmButtonColor: '#4f46e5',
-            cancelButtonColor: '#64748b',
-            confirmButtonText: 'Ya, Simpan!',
-            cancelButtonText: 'Batal'
+            confirmButtonText: 'Ya, Generate',
+            confirmButtonColor: '#4f46e5'
         });
 
-        if (result.isConfirmed) {
+        if (confirm) {
+            window.utils.showLoading("Generating...");
             try {
-                window.utils.showLoading("Menyimpan...");
-                await setDoc(doc(window.db, "admin_token", newToken), { created_at: new Date() });
-                window.utils.hideLoading();
-                await Swal.fire({
-                    icon: 'success',
-                    title: 'Berhasil!',
-                    html: `Token admin baru telah dibuat:<br><b class="text-xl text-indigo-600 font-mono">${newToken}</b><br><br>Gunakan token ini untuk login sebagai admin.`,
-                    confirmButtonColor: '#4f46e5'
+                const newToken = window.utils.generateToken();
+                await setDoc(doc(window.db, "admin_token", newToken), {
+                    createdAt: new Date().toISOString(),
+                    role: 'admin'
                 });
+                window.utils.showSuccess("Token Berhasil Dibuat", `Token Baru: <b>${newToken}</b>`);
                 loadAdminTokens();
             } catch(err) {
-                window.utils.hideLoading();
                 window.utils.showError("Gagal", err.message);
             }
         }
     });
 
-    // INIT
-    loadSubjects();
-    loadTeachers();
-    loadStudents();
+    btnResetData.addEventListener('click', async () => {
+        const c1 = await Swal.fire({ 
+            title: 'RESET SELURUH DATABASE?', 
+            text: "Semua Data Siswa, Guru, Mapel, dan Nilai akan dihapus PERMANEN. Tindakan ini tidak dapat dibatalkan!", 
+            icon: 'warning', 
+            showCancelButton: true,
+            confirmButtonColor: '#e11d48',
+            confirmButtonText: 'Hapus Semua Data',
+            cancelButtonText: 'Batal'
+        });
+        if (!c1.isConfirmed) return;
 
+        const c2 = await Swal.fire({ 
+            title: 'KONFIRMASI AKHIR', 
+            text: "Silakan ketik 'Hapus Semua' untuk mengkonfirmasi penghapusan total:", 
+            input: 'text', 
+            icon: 'error',
+            confirmButtonColor: '#be123c',
+            confirmButtonText: 'KONFIRMASI HAPUS PERMANEN',
+            preConfirm: (v) => {
+                if (v !== 'Hapus Semua') {
+                    Swal.showValidationMessage('Teks konfirmasi salah!');
+                    return false;
+                }
+                return true;
+            }
+        });
+        if (!c2.isConfirmed) return;
+
+        window.utils.showLoading("Membersihkan Database...");
+        try {
+            const currentAdminId = localStorage.getItem('adminData');
+            
+            // Cleanup grade collections
+            const tSnap = await getDocs(collection(window.db, "teachers"));
+            for (const d of tSnap.docs) {
+                const gQS = await getDocs(collection(window.db, `grades_${d.id}`));
+                for (const gDoc of gQS.docs) {
+                    await deleteDoc(doc(window.db, `grades_${d.id}`, gDoc.id));
+                }
+            }
+            
+            const wipe = async (col) => {
+                const qs = await getDocs(collection(window.db, col));
+                for (const d of qs.docs) {
+                    if (col === "admin_token" && d.id === currentAdminId) continue;
+                    await deleteDoc(doc(window.db, col, d.id));
+                }
+            };
+
+            await wipe("students");
+            await wipe("teachers");
+            await wipe("subjects");
+            await wipe("classes");
+            await wipe("admin_token");
+            
+            window.utils.hideLoading();
+            await Swal.fire({ icon: 'success', title: 'Data Berhasil Direset' });
+            location.reload();
+        } catch(err) { 
+            window.utils.hideLoading();
+            window.utils.showError("Gagal Reset", err.message);
+        }
+    });
+
+    // INIT
+    loadSubjects(); loadTeachers(); loadStudents(); loadClasses(); loadAdminTokens();
 });
