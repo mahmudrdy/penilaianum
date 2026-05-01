@@ -185,6 +185,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const tInput = document.getElementById(`tulis_${student.id}`);
             const avgDiv = document.getElementById(`avg_${student.id}`);
 
+            // Cegah error null jika siswa tidak sedang ditampilkan (karena filter)
+            if (!pInput || !tInput || !avgDiv) return;
+
             const calc = () => {
                 let p = parseFloat(pInput.value);
                 let t = parseFloat(tInput.value);
