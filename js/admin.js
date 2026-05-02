@@ -912,7 +912,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const sAvgHeader = { ...sHeader, fill: { fgColor: { rgb: "059669" } } };
 
                 // Build Headers
-                const headers = [
+                const header1 = [
+                    { v: "No", s: sHeader },
+                    { v: "NIS", s: sHeader },
+                    { v: "Nama Lengkap", s: sHeader }
+                ];
+                const header2 = [
                     { v: "No", s: sHeader },
                     { v: "NIS", s: sHeader },
                     { v: "Nama Lengkap", s: sHeader }
@@ -920,16 +925,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 let gradeColCount = 0;
                 applicableTokens.forEach(tkn => {
-                    headers.push({ v: cachedMapels[tkn].name, s: sHeader });
-                    gradeColCount++;
+                    header1.push({ v: cachedMapels[tkn].name, s: sHeader });
+                    header1.push({ v: "", s: sHeader }); // Empty for merge
+                    header1.push({ v: "", s: sHeader }); // Empty for merge
+                    
+                    header2.push({ v: "Praktek", s: sHeader });
+                    header2.push({ v: "Tulis", s: sHeader });
+                    header2.push({ v: "UM", s: sAvgHeader });
+                    
+                    gradeColCount += 3;
                 });
-                headers.push({ v: "Rata-rata UM", s: sAvgHeader });
+                header1.push({ v: "Rata-rata Total", s: sAvgHeader });
+                header2.push({ v: "Rata-rata Total", s: sAvgHeader });
 
                 const wsData = [
                     [{ v: "REKAPITULASI NILAI " + filterCategory.toUpperCase() + " - KELAS: " + kelas, s: { font: { bold: true, sz: 14, color: { rgb: "1E1B4B" } }, alignment: { horizontal: "center" } } }],
                     [{ v: "Tanggal Ekspor: " + new Date().toLocaleDateString('id-ID'), s: { alignment: { horizontal: "center" } } }],
                     [],
-                    headers
+                    header1,
+                    header2
                 ];
 
                 filteredStudents.forEach((st, idx) => {
@@ -942,8 +956,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     let total = 0, count = 0;
                     applicableTokens.forEach(tkn => {
                         const grades = cachedAllGrades[tkn] ? cachedAllGrades[tkn][st.id] : null;
+                        const praktek = grades ? Number(grades.praktek) || 0 : 0;
+                        const tulis = grades ? Number(grades.tulis) || 0 : 0;
                         const um = grades ? Number(grades.average) || 0 : 0;
-                        row.push({ v: um, t: 'n', s: sNo });
+                        
+                        row.push({ v: praktek, t: 'n', s: sNo });
+                        row.push({ v: tulis, t: 'n', s: sNo });
+                        row.push({ v: um, t: 'n', s: { ...sNo, fill: { fgColor: { rgb: "F0FDF4" } }, font: { bold: true, color: { rgb: "047857" } } } });
+                        
                         if (um > 0) { total += um; count++; }
                     });
 
@@ -954,16 +974,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const ws = XLSX.utils.aoa_to_sheet(wsData);
                 
-                // Merges for title (Row 1 & 2)
-                const totalCols = 3 + gradeColCount + 1; // No, NIS, Name + Mapels + Avg
-                ws['!merges'] = [
+                const totalCols = 3 + gradeColCount + 1; // No, NIS, Name + Mapels(Praktek,Tulis,UM) + Avg Total
+                
+                const merges = [
                     { s: { r: 0, c: 0 }, e: { r: 0, c: totalCols - 1 } },
-                    { s: { r: 1, c: 0 }, e: { r: 1, c: totalCols - 1 } }
+                    { s: { r: 1, c: 0 }, e: { r: 1, c: totalCols - 1 } },
+                    // Merging vertical headers for No, NIS, Nama
+                    { s: { r: 3, c: 0 }, e: { r: 4, c: 0 } },
+                    { s: { r: 3, c: 1 }, e: { r: 4, c: 1 } },
+                    { s: { r: 3, c: 2 }, e: { r: 4, c: 2 } },
+                    // Merging vertical header for Rata-rata Total
+                    { s: { r: 3, c: totalCols - 1 }, e: { r: 4, c: totalCols - 1 } }
                 ];
+
+                let currentStartCol = 3;
+                applicableTokens.forEach(() => {
+                    merges.push({ s: { r: 3, c: currentStartCol }, e: { r: 3, c: currentStartCol + 2 } });
+                    currentStartCol += 3;
+                });
+
+                ws['!merges'] = merges;
 
                 // Column Widths
                 const colWidths = [{ wpx: 40 }, { wpx: 100 }, { wpx: 250 }];
-                applicableTokens.forEach(() => colWidths.push({ wpx: 130 }));
+                applicableTokens.forEach(() => {
+                    colWidths.push({ wpx: 70 }); // Praktek
+                    colWidths.push({ wpx: 70 }); // Tulis
+                    colWidths.push({ wpx: 70 }); // UM
+                });
                 colWidths.push({ wpx: 100 });
                 ws['!cols'] = colWidths;
 
